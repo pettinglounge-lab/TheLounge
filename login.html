@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in — Petting Lounge</title>
+  <title>Log in — Petting Lounge</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,30 +17,26 @@
   <main class="auth-wrap">
     <div class="auth-card">
 
-      <!-- SIGNED-OUT VIEW -->
-      <div id="signup-view">
-        <div class="auth-tabs">
-          <button id="tab-login"  class="active">Log in</button>
-          <button id="tab-signup">Sign up</button>
-        </div>
-
-        <h1 id="title">Welcome back</h1>
-        <p class="sub" id="subtitle">Log in to see your projects and orders.</p>
+      <!-- LOG IN FORM -->
+      <div id="form-view">
+        <h1>Welcome back</h1>
+        <p class="sub">Log in to see your projects and orders.</p>
 
         <form id="auth-form">
           <label for="email">Email address</label>
           <input type="email" id="email" placeholder="you@example.com" required autocomplete="email" />
 
           <label for="password">Password</label>
-          <input type="password" id="password" placeholder="••••••••" required minlength="6" autocomplete="current-password" />
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
 
           <button type="submit" class="btn btn-primary" id="submit-btn">Log in</button>
         </form>
 
         <p class="msg" id="message"></p>
+        <p class="switch">New to Petting Lounge? <a href="signup.html">Create an account</a></p>
       </div>
 
-      <!-- SIGNED-IN VIEW -->
+      <!-- ALREADY SIGNED IN -->
       <div id="signed-in-view" style="display:none;">
         <h1>You're signed in</h1>
         <p class="signed">Signed in as <b id="account-email"></b>.</p>
@@ -51,92 +47,47 @@
     </div>
   </main>
 
+  <!-- auth logic -->
   <script type="module">
     import { supabase } from "./supabaseClient.js";
 
-    const signupView   = document.getElementById("signup-view");
+    const formView     = document.getElementById("form-view");
     const signedInView = document.getElementById("signed-in-view");
-    const form     = document.getElementById("auth-form");
-    const emailIn  = document.getElementById("email");
-    const passIn   = document.getElementById("password");
-    const btn      = document.getElementById("submit-btn");
-    const message  = document.getElementById("message");
-    const title    = document.getElementById("title");
-    const subtitle = document.getElementById("subtitle");
-    const tabLogin  = document.getElementById("tab-login");
-    const tabSignup = document.getElementById("tab-signup");
+    const form    = document.getElementById("auth-form");
+    const emailIn = document.getElementById("email");
+    const passIn  = document.getElementById("password");
+    const btn     = document.getElementById("submit-btn");
+    const message = document.getElementById("message");
 
-    let mode = "login"; // "login" or "signup"
-
-    // ---- switch between Log in / Sign up ----
-    function setMode(next) {
-      mode = next;
-      const signup = mode === "signup";
-      tabSignup.classList.toggle("active", signup);
-      tabLogin.classList.toggle("active", !signup);
-      title.textContent    = signup ? "Create your account" : "Welcome back";
-      subtitle.textContent = signup ? "Sign up to save your projects and orders."
-                                    : "Log in to see your projects and orders.";
-      btn.textContent      = signup ? "Sign up" : "Log in";
-      passIn.autocomplete  = signup ? "new-password" : "current-password";
-      message.textContent  = "";
-      message.className     = "msg";
-    }
-    tabLogin.addEventListener("click", () => setMode("login"));
-    tabSignup.addEventListener("click", () => setMode("signup"));
-
-    // ---- already signed in? ----
     async function checkExisting() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user.is_anonymous === false) {
         document.getElementById("account-email").textContent = session.user.email;
-        signupView.style.display = "none";
+        formView.style.display = "none";
         signedInView.style.display = "block";
       }
     }
 
-    // ---- submit ----
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = emailIn.value.trim();
       const password = passIn.value;
       if (!email || !password) return;
 
-      btn.disabled = true;
-      btn.textContent = mode === "signup" ? "Creating account…" : "Logging in…";
-      message.textContent = "";
-      message.className = "msg";
+      btn.disabled = true; btn.textContent = "Logging in…";
+      message.textContent = ""; message.className = "msg";
 
-      let result;
-      if (mode === "signup") {
-        result = await supabase.auth.signUp({ email, password });
-      } else {
-        result = await supabase.auth.signInWithPassword({ email, password });
-      }
-
-      const { data, error } = result;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         message.textContent = error.message;
         message.className = "msg err";
-        btn.disabled = false;
-        btn.textContent = mode === "signup" ? "Sign up" : "Log in";
+        btn.disabled = false; btn.textContent = "Log in";
         return;
       }
-
-      if (data.session) {
-        // Logged in — go to the site.
-        window.location.href = "index.html";
-      } else {
-        // Signup succeeded but email confirmation is still ON in Supabase.
-        message.textContent = "Account created. Check your email to confirm, then log in.";
-        message.className = "msg ok";
-        btn.disabled = false;
-        btn.textContent = "Sign up";
-      }
+      window.location.href = "index.html";
     });
 
-    // ---- sign out ----
     document.getElementById("signout").addEventListener("click", async (e) => {
       e.preventDefault();
       await supabase.auth.signOut();
@@ -145,5 +96,8 @@
 
     checkExisting();
   </script>
+
+  <!-- navbar -->
+  <script type="module" src="Navbar.js"></script>
 </body>
 </html>
