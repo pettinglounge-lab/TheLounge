@@ -1,0 +1,145 @@
+/* =========================================================================
+   style.css — Northlight Studio
+   One clean, white theme shared by every page. Change a value here once and
+   it updates everywhere. Colors live in :root as easy-to-read variables.
+   ========================================================================= */
+
+:root {
+  --bg:        #ffffff;   /* page background */
+  --wash:      #f7f7f5;   /* soft section background */
+  --ink:       #141414;   /* main text */
+  --ink-soft:  #6e6e6e;   /* secondary text */
+  --line:      #ececec;   /* borders + dividers */
+  --accent:    #141414;   /* buttons / primary actions (kept black for a clean look) */
+
+  --radius:    12px;
+  --shadow:    0 1px 2px rgba(0,0,0,.04), 0 10px 40px rgba(0,0,0,.05);
+  --maxw:      1120px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+/* ---------- shared layout ---------- */
+.container { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-block; cursor: pointer; text-decoration: none;
+  font-size: 15px; font-weight: 600; border-radius: 999px;
+  padding: 13px 26px; border: 1px solid transparent;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #000; }
+.btn-outline { background: #fff; color: var(--ink); border-color: var(--line); }
+.btn-outline:hover { border-color: var(--ink); }
+
+/* =========================================================================
+   NAVBAR  (markup comes from Navbar.js; styles live here)
+   ========================================================================= */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 40;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(10px);
+}
+.nav a { text-decoration: none; }
+.nav .brand {
+  font-weight: 700; font-size: 19px; letter-spacing: -.01em;
+  color: var(--ink); display: flex; align-items: center; gap: 8px;
+}
+.nav .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink); }
+.nav .links { display: flex; align-items: center; gap: 26px; }
+.nav .links a { color: var(--ink-soft); font-size: 15px; font-weight: 500; }
+.nav .links a:hover { color: var(--ink); }
+.nav .links a.active { color: var(--ink); font-weight: 600; }
+.nav .cart {
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px;
+  color: var(--ink) !important; font-weight: 500;
+}
+.nav .cart:hover { border-color: var(--ink); }
+@media (max-width: 640px) {
+  .nav .links a:not(.cart) { display: none; }
+}
+
+/* =========================================================================
+   HERO
+   ========================================================================= */
+.hero {
+  display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px;
+  align-items: center; padding: 88px 0 96px;
+}
+.hero h1 {
+  font-size: 54px; line-height: 1.05; letter-spacing: -.02em; font-weight: 700;
+  margin-bottom: 20px;
+}
+.hero p.lead { font-size: 18px; color: var(--ink-soft); max-width: 30ch; margin-bottom: 30px; }
+.hero .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero .reassure { margin-top: 18px; font-size: 14px; color: var(--ink-soft); }
+
+/* the framed portrait shown in the hero */
+.frame {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 22px; justify-self: center; max-width: 380px; width: 100%;
+}
+.frame .art {
+  background: var(--wash); border-radius: 8px; aspect-ratio: 4/5;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+}
+.frame .art svg { width: 44%; opacity: .85; }
+.frame .art .petname { font-size: 26px; letter-spacing: .02em; color: var(--ink); }
+
+/* =========================================================================
+   STEPS
+   ========================================================================= */
+.steps { background: var(--wash); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.steps .container { padding-top: 72px; padding-bottom: 72px; }
+.steps h2 { font-size: 30px; letter-spacing: -.01em; text-align: center; margin-bottom: 8px; }
+.steps .sub { text-align: center; color: var(--ink-soft); margin-bottom: 48px; }
+.steps .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.step { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 30px; }
+.step .num {
+  width: 34px; height: 34px; border-radius: 999px; background: var(--ink); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 15px;
+  margin-bottom: 16px;
+}
+.step h3 { font-size: 18px; margin-bottom: 6px; }
+.step p { color: var(--ink-soft); font-size: 15px; }
+
+/* =========================================================================
+   FOOTER
+   ========================================================================= */
+.footer { padding: 44px 0; }
+.footer .container { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.footer .brand { font-weight: 700; }
+.footer .muted { color: var(--ink-soft); font-size: 14px; }
+.footer a { color: var(--ink-soft); text-decoration: none; font-size: 14px; margin-left: 20px; }
+.footer a:hover { color: var(--ink); }
+
+/* =========================================================================
+   RESPONSIVE
+   ========================================================================= */
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr; gap: 36px; padding: 56px 0 64px; text-align: center; }
+  .hero h1 { font-size: 40px; }
+  .hero p.lead { margin-left: auto; margin-right: auto; }
+  .hero .cta-row { justify-content: center; }
+  .frame { grid-row: 1; }
+  .steps .grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
