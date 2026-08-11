@@ -10,7 +10,8 @@
   --ink:       #141414;   /* main text */
   --ink-soft:  #6e6e6e;   /* secondary text */
   --line:      #ececec;   /* borders + dividers */
-  --accent:    #141414;   /* buttons / primary actions (kept black for a clean look) */
+  --accent:      #2c7a5b;   /* fresh green — the site's pop of color */
+  --accent-dark: #24624a;   /* darker green for button hover */
 
   --radius:    12px;
   --shadow:    0 1px 2px rgba(0,0,0,.04), 0 10px 40px rgba(0,0,0,.05);
@@ -43,7 +44,7 @@ a { color: inherit; }
 }
 .btn:active { transform: translateY(1px); }
 .btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover { background: #000; }
+.btn-primary:hover { background: var(--accent-dark); }
 .btn-outline { background: #fff; color: var(--ink); border-color: var(--line); }
 .btn-outline:hover { border-color: var(--ink); }
 
@@ -75,7 +76,7 @@ a { color: inherit; }
   transition: color .15s ease, border-color .15s ease, background .15s ease;
 }
 .nav .center a:hover { color: var(--ink); border-color: var(--ink); background: var(--wash); }
-.nav .center a.active { color: var(--ink); font-weight: 600; border-color: var(--ink); }
+.nav .center a.active { color: var(--ink); font-weight: 600; border-color: var(--accent); }
 
 /* account, top-right */
 .nav .account { justify-self: end; }
@@ -128,7 +129,7 @@ a { color: inherit; }
 .steps .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
 .step { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 30px; }
 .step .num {
-  width: 34px; height: 34px; border-radius: 999px; background: var(--ink); color: #fff;
+  width: 34px; height: 34px; border-radius: 999px; background: var(--accent); color: #fff;
   display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 15px;
   margin-bottom: 16px;
 }
@@ -201,3 +202,43 @@ a { color: inherit; }
 .auth-card .switch { margin-top: 20px; text-align: center; font-size: 14px; color: var(--ink-soft); }
 .auth-card .switch a { color: var(--ink); font-weight: 600; text-decoration: none; }
 .auth-card .switch a:hover { text-decoration: underline; }
+
+/* =========================================================================
+   ACCOUNT  (account.html)
+   ========================================================================= */
+.account-page { max-width: 720px; margin: 0 auto; padding: 56px 28px 120px; }
+.account-page h1 { font-size: 32px; letter-spacing: -.01em; margin-bottom: 28px; }
+
+.panel {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 28px; margin-bottom: 24px;
+}
+.panel h2 { font-size: 18px; margin-bottom: 18px; }
+
+.info-row {
+  display: flex; justify-content: space-between; gap: 16px;
+  padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row .label { color: var(--ink-soft); }
+.info-row .value { font-weight: 500; text-align: right; }
+
+.account-actions { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+
+.order {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 16px 0; border-bottom: 1px solid var(--line);
+}
+.order:last-child { border-bottom: none; }
+.order .oid { font-weight: 600; color: var(--ink); font-size: 15px; }
+.order .meta { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+.order .right { text-align: right; }
+.badge {
+  font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 999px;
+  background: var(--wash); color: var(--ink); text-transform: capitalize;
+}
+.order .amount { font-weight: 600; font-size: 15px; margin-top: 4px; }
+
+.empty { text-align: center; padding: 28px 0; color: var(--ink-soft); font-size: 15px; }
+.empty a { color: var(--ink); font-weight: 600; text-decoration: none; }
+.empty a:hover { text-decoration: underline; }
