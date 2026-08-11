@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account — Petting Lounge</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <site-nav></site-nav>
+
+  <main class="account-page">
+    <h1>Your account</h1>
+
+    <!-- ACCOUNT INFO -->
+    <section class="panel">
+      <h2>Account details</h2>
+      <div class="info-row">
+        <span class="label">Email</span>
+        <span class="value" id="email">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Member since</span>
+        <span class="value" id="since">—</span>
+      </div>
+
+      <div class="account-actions">
+        <button class="btn btn-outline" id="logout">Log out</button>
+        <a class="btn btn-outline" href="mailto:support@pettinglounge.com?subject=Support%20request">Contact support</a>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section class="panel">
+      <h2>Your orders</h2>
+      <div id="orders">
+        <div class="empty">Loading…</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- account logic -->
+  <script type="module">
+    import { supabase } from "./supabaseClient.js";
+
+    // 1. Require a real (non-guest) account. Otherwise send to login.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.is_anonymous === true) {
+      window.location.href = "login.html";
+    } else {
+      showAccount(session.user);
+      loadOrders();
+    }
+
+    // 2. Fill in account details.
+    function showAccount(user) {
+      document.getElementById("email").textContent = user.email;
+      const d = new Date(user.created_at);
+      document.getElementById("since").textContent =
+        d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    }
+
+    // 3. Load this user's orders (RLS returns only their own rows).
+    async function loadOrders() {
+      const box = document.getElementById("orders");
+      const { data: orders, error } = await supabase
+        .from("orders")
+        .select("id, created_at, status, amount_total")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        box.innerHTML = `<div class="empty">Couldn't load orders right now.</div>`;
+        return;
+      }
+      if (!orders || orders.length === 0) {
+        box.innerHTML = `<div class="empty">No orders yet. <a href="index.html">Create your first portrait →</a></div>`;
+        return;
+      }
+
+      box.innerHTML = orders.map((o) => {
+        const date = new Date(o.created_at).toLocaleDateString(undefined,
+          { year: "numeric", month: "short", day: "numeric" });
+        const amount = o.amount_total != null ? "$" + (o.amount_total / 100).toFixed(2) : "";
+        const shortId = o.id.slice(0, 8).toUpperCase();
+        return `
+          <div class="order">
+            <div>
+              <div class="oid">Order #${shortId}</div>
+              <div class="meta">${date}</div>
+            </div>
+            <div class="right">
+              <span class="badge">${o.status}</span>
+              <div class="amount">${amount}</div>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    // 4. Log out.
+    document.getElementById("logout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
+    });
+  </script>
+
+  <!-- navbar -->
+  <script type="module" src="Navbar.js"></script>
+</body>
+</html>
