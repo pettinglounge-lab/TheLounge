@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Northlight Studio — Custom Pet Portraits</title>
+  <title>Petting Lounge — Custom Pet Portraits</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,8 +15,8 @@
 </head>
 <body>
 
-  <!-- Reusable navbar (from Navbar.js) -->
-  <site-nav></site-nav>
+  <!-- Reusable navbar (from Navbar.js). "active" highlights the current page. -->
+  <site-nav active="create"></site-nav>
 
   <!-- ================= HERO ================= -->
   <section class="container hero">
@@ -77,17 +77,17 @@
   <!-- ================= FOOTER ================= -->
   <footer class="footer">
     <div class="container">
-      <span class="brand">Northlight Studio</span>
+      <span class="brand">Petting Lounge</span>
       <nav>
-        <a href="how-it-works.html">How it works</a>
+        <a href="index.html">Create</a>
         <a href="gallery.html">Gallery</a>
-        <a href="customize.html">Create yours</a>
+        <a href="login.html">Sign up</a>
       </nav>
-      <span class="muted">© 2026 Northlight Studio</span>
+      <span class="muted">© 2026 Petting Lounge</span>
     </div>
   </footer>
 
-  <!-- Load the navbar component -->
-  <script src="Navbar.js"></script>
+  <!-- Load the navbar component (module, so it can use Supabase) -->
+  <script type="module" src="Navbar.js"></script>
 </body>
 </html>
