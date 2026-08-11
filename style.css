@@ -68,10 +68,14 @@ a { color: inherit; }
 }
 
 /* centered links: Create, Projects */
-.nav .center { justify-self: center; display: flex; align-items: center; gap: 30px; }
-.nav .center a { color: var(--ink-soft); font-size: 15px; font-weight: 500; }
-.nav .center a:hover { color: var(--ink); }
-.nav .center a.active { color: var(--ink); font-weight: 600; }
+.nav .center { justify-self: center; display: flex; align-items: center; gap: 14px; }
+.nav .center a {
+  color: var(--ink-soft); font-size: 15px; font-weight: 500;
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 22px;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.nav .center a:hover { color: var(--ink); border-color: var(--ink); background: var(--wash); }
+.nav .center a.active { color: var(--ink); font-weight: 600; border-color: var(--ink); }
 
 /* account, top-right */
 .nav .account { justify-self: end; }
