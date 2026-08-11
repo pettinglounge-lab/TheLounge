@@ -51,30 +51,40 @@ a { color: inherit; }
    NAVBAR  (markup comes from Navbar.js; styles live here)
    ========================================================================= */
 .nav {
-  display: flex; align-items: center; justify-content: space-between;
+  /* three zones: logo (left) | links (center) | account (right) */
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   padding: 16px 28px;
   border-bottom: 1px solid var(--line);
   position: sticky; top: 0; z-index: 40;
-  background: rgba(255,255,255,.85);
+  background: rgba(255,255,255,.9);
   backdrop-filter: blur(10px);
 }
 .nav a { text-decoration: none; }
+
+/* logo, top-left, clean black */
 .nav .brand {
-  font-weight: 700; font-size: 19px; letter-spacing: -.01em;
-  color: var(--ink); display: flex; align-items: center; gap: 8px;
+  justify-self: start;
+  font-weight: 700; font-size: 20px; letter-spacing: -.01em; color: var(--ink);
 }
-.nav .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink); }
-.nav .links { display: flex; align-items: center; gap: 26px; }
-.nav .links a { color: var(--ink-soft); font-size: 15px; font-weight: 500; }
-.nav .links a:hover { color: var(--ink); }
-.nav .links a.active { color: var(--ink); font-weight: 600; }
-.nav .cart {
+
+/* centered links: Create, Projects */
+.nav .center { justify-self: center; display: flex; align-items: center; gap: 30px; }
+.nav .center a { color: var(--ink-soft); font-size: 15px; font-weight: 500; }
+.nav .center a:hover { color: var(--ink); }
+.nav .center a.active { color: var(--ink); font-weight: 600; }
+
+/* account, top-right */
+.nav .account { justify-self: end; }
+.nav .account a {
   border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px;
-  color: var(--ink) !important; font-weight: 500;
+  color: var(--ink); font-weight: 500; font-size: 15px;
 }
-.nav .cart:hover { border-color: var(--ink); }
-@media (max-width: 640px) {
-  .nav .links a:not(.cart) { display: none; }
+.nav .account a:hover { border-color: var(--ink); }
+
+@media (max-width: 600px) {
+  .nav { padding: 14px 18px; }
+  .nav .center { gap: 18px; }
+  .nav .center a { font-size: 14px; }
 }
 
 /* =========================================================================
