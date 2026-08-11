@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign up — Petting Lounge</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <site-nav></site-nav>
+
+  <main class="auth-wrap">
+    <div class="auth-card">
+
+      <!-- SIGN UP FORM -->
+      <div id="form-view">
+        <h1>Create your account</h1>
+        <p class="sub">Sign up to save your projects and track your orders.</p>
+
+        <form id="auth-form">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@example.com" required autocomplete="email" />
+
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password" />
+
+          <button type="submit" class="btn btn-primary" id="submit-btn">Sign up</button>
+        </form>
+
+        <p class="msg" id="message"></p>
+        <p class="switch">Already have an account? <a href="login.html">Log in</a></p>
+      </div>
+
+      <!-- ALREADY SIGNED IN -->
+      <div id="signed-in-view" style="display:none;">
+        <h1>You're signed in</h1>
+        <p class="signed">Signed in as <b id="account-email"></b>.</p>
+        <a href="projects.html" class="btn btn-primary" style="width:100%; text-align:center;">Go to your projects</a>
+        <p class="fine"><a href="#" id="signout" style="color:var(--ink-soft);">Sign out</a></p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- auth logic -->
+  <script type="module">
+    import { supabase } from "./supabaseClient.js";
+
+    const formView     = document.getElementById("form-view");
+    const signedInView = document.getElementById("signed-in-view");
+    const form    = document.getElementById("auth-form");
+    const emailIn = document.getElementById("email");
+    const passIn  = document.getElementById("password");
+    const btn     = document.getElementById("submit-btn");
+    const message = document.getElementById("message");
+
+    async function checkExisting() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user.is_anonymous === false) {
+        document.getElementById("account-email").textContent = session.user.email;
+        formView.style.display = "none";
+        signedInView.style.display = "block";
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailIn.value.trim();
+      const password = passIn.value;
+      if (!email || !password) return;
+
+      btn.disabled = true; btn.textContent = "Creating account…";
+      message.textContent = ""; message.className = "msg";
+
+      const { data, error } = await supabase.auth.signUp({ email, password });
+
+      if (error) {
+        message.textContent = error.message;
+        message.className = "msg err";
+        btn.disabled = false; btn.textContent = "Sign up";
+        return;
+      }
+
+      if (data.session) {
+        window.location.href = "index.html";        // confirmation off: straight in
+      } else {
+        message.textContent = "Account created. Check your email to confirm, then log in.";
+        message.className = "msg ok";
+        btn.disabled = false; btn.textContent = "Sign up";
+      }
+    });
+
+    document.getElementById("signout").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await supabase.auth.signOut();
+      location.reload();
+    });
+
+    checkExisting();
+  </script>
+
+  <!-- navbar -->
+  <script type="module" src="Navbar.js"></script>
+</body>
+</html>
