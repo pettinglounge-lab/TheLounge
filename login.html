@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — Petting Lounge</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <site-nav></site-nav>
+
+  <main class="auth-wrap">
+    <div class="auth-card">
+
+      <!-- SIGNED-OUT VIEW: enter email to get a link -->
+      <div id="signup-view">
+        <h1>Sign in or sign up</h1>
+        <p class="sub">Enter your email and we'll send you a secure sign-in link. No password needed.</p>
+
+        <form id="auth-form">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@example.com" required autocomplete="email" />
+          <button type="submit" class="btn btn-primary" id="submit-btn">Email me a sign-in link</button>
+        </form>
+
+        <p class="msg" id="message"></p>
+        <p class="fine">By continuing you agree to Petting Lounge's terms.</p>
+      </div>
+
+      <!-- SIGNED-IN VIEW: shown when a real account is already logged in -->
+      <div id="signed-in-view" style="display:none;">
+        <h1>You're signed in</h1>
+        <p class="signed">Signed in as <b id="account-email"></b>.</p>
+        <a href="projects.html" class="btn btn-primary" style="width:100%; text-align:center;">Go to your projects</a>
+        <p class="fine"><a href="#" id="signout" style="color:var(--ink-soft);">Sign out</a></p>
+      </div>
+
+    </div>
+  </main>
+
+  <script type="module">
+    import { supabase } from "./supabaseClient.js";
+
+    const signupView  = document.getElementById("signup-view");
+    const signedInView = document.getElementById("signed-in-view");
+    const form    = document.getElementById("auth-form");
+    const emailIn = document.getElementById("email");
+    const btn     = document.getElementById("submit-btn");
+    const message = document.getElementById("message");
+
+    // Where the emailed link should return the user after they click it.
+    // Built from the current page so it works on GitHub Pages automatically.
+    const redirectTo = new URL("index.html", window.location.href).href;
+
+    // 1. If a real account is already signed in, show the signed-in view.
+    async function checkExisting() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user.is_anonymous === false) {
+        document.getElementById("account-email").textContent = session.user.email;
+        signupView.style.display = "none";
+        signedInView.style.display = "block";
+      }
+    }
+
+    // 2. Send the magic link.
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailIn.value.trim();
+      if (!email) return;
+
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+      message.textContent = "";
+      message.className = "msg";
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: redirectTo },
+      });
+
+      if (error) {
+        message.textContent = "Something went wrong: " + error.message;
+        message.className = "msg err";
+        btn.disabled = false;
+        btn.textContent = "Email me a sign-in link";
+      } else {
+        message.textContent = "✓ Check your inbox — we sent a sign-in link to " + email + ". Click it to finish.";
+        message.className = "msg ok";
+        btn.textContent = "Link sent";
+      }
+    });
+
+    // 3. Sign out (from the signed-in view).
+    document.getElementById("signout").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await supabase.auth.signOut();
+      location.reload();
+    });
+
+    checkExisting();
+  </script>
+</body>
+</html>
