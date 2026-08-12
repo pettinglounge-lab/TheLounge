@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projects — Petting Lounge</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <site-nav active="projects"></site-nav>
+
+  <main class="projects-page">
+    <h1>Your projects</h1>
+
+    <!-- CREATE BOX -->
+    <section class="panel create-box">
+      <h2>Create a new portrait</h2>
+
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a photo">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
+          <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+        </svg>
+        <div><strong>Upload a photo</strong> or click to browse</div>
+        <div id="fname" style="margin-top:6px;"></div>
+      </div>
+      <input type="file" id="file" accept="image/*" hidden />
+
+      <textarea id="note" placeholder="Add any notes (optional) — e.g. 'sage green background, add the name Biscuit'"></textarea>
+
+      <button class="btn btn-primary" id="create" disabled>Create project</button>
+      <p class="msg" id="msg"></p>
+    </section>
+
+    <!-- SAVED PROJECTS -->
+    <section>
+      <h2>Saved</h2>
+      <div id="projects" class="project-grid">
+        <div class="empty">Loading…</div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { supabase } from "./supabaseClient.js";
+
+    // ---- require a signed-in account (Projects is behind login) ----
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.is_anonymous === true) {
+      window.location.href = "login.html";
+    }
+    const userId = session?.user?.id;
+
+    const drop   = document.getElementById("drop");
+    const fileIn = document.getElementById("file");
+    const fname  = document.getElementById("fname");
+    const note   = document.getElementById("note");
+    const createBtn = document.getElementById("create");
+    const msg    = document.getElementById("msg");
+    let selectedFile = null;
+
+    // ---- pick / drop a file ----
+    drop.addEventListener("click", () => fileIn.click());
+    drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } });
+    ["dragover", "dragenter"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("drag"); }));
+    ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("drag"); }));
+    drop.addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) pick(e.dataTransfer.files[0]); });
+    fileIn.addEventListener("change", (e) => { if (e.target.files[0]) pick(e.target.files[0]); });
+
+    function pick(file) {
+      if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
+      selectedFile = file;
+      drop.classList.add("has-file");
+      fname.textContent = "✓ " + file.name;
+      createBtn.disabled = false;
+    }
+
+    // ---- create the project ----
+    createBtn.addEventListener("click", async () => {
+      if (!selectedFile) return;
+      createBtn.disabled = true; createBtn.textContent = "Creating…";
+      msg.textContent = ""; msg.className = "msg";
+
+      try {
+        // 1. upload photo into the user's folder
+        const ext = selectedFile.name.split(".").pop();
+        const photoPath = `${userId}/${crypto.randomUUID()}.${ext}`;
+        const up = await supabase.storage.from("pet-photos")
+          .upload(photoPath, selectedFile, { contentType: selectedFile.type });
+        if (up.error) throw up.error;
+
+        // 2. save a portraits row (note goes in config)
+        const ins = await supabase.from("portraits").insert({
+          user_id: userId,
+          photo_path: photoPath,
+          config: { note: note.value.trim() || null },
+          status: "draft",
+        });
+        if (ins.error) throw ins.error;
+
+        // 3. reset + refresh
+        selectedFile = null;
+        fileIn.value = "";
+        note.value = "";
+        drop.classList.remove("has-file");
+        fname.textContent = "";
+        msg.textContent = "✓ Project created.";
+        msg.className = "msg ok";
+        loadProjects();
+      } catch (e) {
+        msg.textContent = "Something went wrong: " + e.message;
+        msg.className = "msg err";
+      } finally {
+        createBtn.textContent = "Create project";
+      }
+    });
+
+    // ---- load saved projects ----
+    async function loadProjects() {
+      const box = document.getElementById("projects");
+      const { data: rows, error } = await supabase
+        .from("portraits")
+        .select("id, photo_path, render_path, config, status, created_at")
+        .order("created_at", { ascending: false });
+
+      if (error) { box.innerHTML = `<div class="empty">Couldn't load projects.</div>`; return; }
+      if (!rows || rows.length === 0) {
+        box.innerHTML = `<div class="empty">No projects yet — upload a photo above to start.</div>`;
+        return;
+      }
+
+      // get a temporary viewable URL for each private photo
+      const cards = await Promise.all(rows.map(async (r) => {
+        let url = "";
+        const { data: signed } = await supabase.storage.from("pet-photos").createSignedUrl(r.photo_path, 3600);
+        url = signed?.signedUrl || "";
+        const date = new Date(r.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        const noteText = r.config?.note;
+        const noteHtml = noteText
+          ? `<div class="note">${escapeHtml(noteText)}</div>`
+          : `<div class="note none">No notes</div>`;
+        return `
+          <div class="project-card">
+            <img src="${url}" alt="Uploaded photo" />
+            <div class="body">
+              ${noteHtml}
+              <div class="meta"><span>${r.status}</span><span>${date}</span></div>
+            </div>
+          </div>`;
+      }));
+      box.innerHTML = cards.join("");
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+
+    loadProjects();
+  </script>
+
+  <script type="module" src="Navbar.js"></script>
+</body>
+</html>
