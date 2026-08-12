@@ -47,7 +47,7 @@ class SiteNav extends HTMLElement {
               Create <span class="caret">▾</span>
             </button>
             <div class="menu">
-              <a href="index.html">Pet</a>
+              <a href="pet.html">Pet</a>
               <a href="home.html">Home</a>
               <a href="memories.html">Memory</a>
             </div>
