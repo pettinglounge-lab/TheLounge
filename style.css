@@ -247,3 +247,43 @@ a { color: inherit; }
 .btn-sm { padding: 8px 16px; font-size: 14px; }
 .info-row { align-items: center; }
 .account-actions.bottom { margin-top: 0; }
+
+/* =========================================================================
+   PROJECTS  (projects.html)
+   ========================================================================= */
+.projects-page { max-width: 900px; margin: 0 auto; padding: 48px 28px 120px; }
+.projects-page h1 { font-size: 32px; letter-spacing: -.01em; margin-bottom: 24px; }
+.projects-page h2 { font-size: 18px; margin-bottom: 16px; }
+
+/* the create box */
+.create-box { margin-bottom: 40px; }
+.create-box .drop {
+  border: 1.5px dashed var(--line); border-radius: 12px; padding: 30px;
+  text-align: center; cursor: pointer; color: var(--ink-soft);
+  transition: border-color .15s, background .15s, color .15s;
+}
+.create-box .drop svg { opacity: .5; margin-bottom: 8px; }
+.create-box .drop strong { color: var(--ink); font-weight: 600; }
+.create-box .drop:hover, .create-box .drop.drag {
+  border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, #fff);
+}
+.create-box .drop.has-file {
+  border-style: solid; border-color: var(--accent); color: var(--accent); font-weight: 600;
+}
+.create-box textarea {
+  width: 100%; font: inherit; font-size: 15px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 10px; margin: 16px 0;
+  min-height: 74px; resize: vertical;
+}
+.create-box textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.create-box .btn { width: 100%; text-align: center; }
+.create-box .msg { margin-top: 14px; font-size: 14px; }
+
+/* projects grid */
+.project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+.project-card { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff; }
+.project-card img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; background: var(--wash); }
+.project-card .body { padding: 12px 14px; }
+.project-card .note { font-size: 14px; color: var(--ink); line-height: 1.4; }
+.project-card .note.none { color: var(--ink-soft); font-style: italic; }
+.project-card .meta { font-size: 12px; color: var(--ink-soft); margin-top: 8px; display: flex; justify-content: space-between; }
