@@ -344,3 +344,11 @@ a { color: inherit; }
 .example-card .cap { padding: 12px 14px; font-size: 14px; }
 .example-card .cap .who { font-weight: 600; }
 .example-card .cap .sub { color: var(--ink-soft); font-size: 13px; margin-top: 2px; }
+
+/* photo tip on the create box */
+.upload-tip {
+  margin-top: 12px; font-size: 13.5px; color: var(--ink-soft);
+  background: var(--wash); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 12px;
+}
+.upload-tip strong { color: var(--ink); }
