@@ -242,3 +242,8 @@ a { color: inherit; }
 .empty { text-align: center; padding: 28px 0; color: var(--ink-soft); font-size: 15px; }
 .empty a { color: var(--ink); font-weight: 600; text-decoration: none; }
 .empty a:hover { text-decoration: underline; }
+
+/* small button variant + keep account rows vertically centered */
+.btn-sm { padding: 8px 16px; font-size: 14px; }
+.info-row { align-items: center; }
+.account-actions.bottom { margin-top: 0; }
