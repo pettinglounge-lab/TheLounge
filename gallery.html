@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery — Petting Lounge</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <site-nav active="gallery"></site-nav>
+
+  <main class="projects-page">
+    <h1>Gallery</h1>
+    <p class="sub" style="color:var(--ink-soft); margin-top:-14px; margin-bottom:28px;">
+      A few of our favorite custom portraits.
+    </p>
+
+    <div class="example-grid" id="gallery"></div>
+  </main>
+
+  <script type="module">
+    // Real images live in /assets. Any missing file falls back to a placeholder tile.
+    const ITEMS = [
+      { file: "assets/dogframe1.png", who: "Cooper",         sub: "Golden Retriever" },
+      { file: "assets/gallery-2.jpg", who: "The Chen Home",   sub: "House portrait" },
+      { file: "assets/gallery-3.jpg", who: "Miso",            sub: "Tabby cat" },
+      { file: "assets/gallery-4.jpg", who: "Forever loved",   sub: "Keepsake" },
+      { file: "assets/gallery-5.jpg", who: "Pepper",          sub: "Goldendoodle" },
+      { file: "assets/gallery-6.jpg", who: "Maple Street",    sub: "House portrait" },
+    ];
+
+    document.getElementById("gallery").innerHTML = ITEMS.map((e) => `
+      <div class="example-card">
+        <div class="example-thumb">
+          <span>Example</span>
+          <img src="${e.file}" alt="${e.who}" onerror="this.remove()" />
+        </div>
+        <div class="cap">
+          <div class="who">${e.who}</div>
+          <div class="sub">${e.sub}</div>
+        </div>
+      </div>`).join("");
+  </script>
+
+  <script type="module" src="Navbar.js"></script>
+</body>
+</html>
