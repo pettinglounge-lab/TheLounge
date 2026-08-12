@@ -4,14 +4,15 @@
 //     <script type="module" src="Navbar.js"></script>
 // Styling lives in style.css (the .nav classes).
 //
-// Layout:  Petting Lounge | Pets · Home · Memories · My Projects | account
-//   - "Pets"        -> index.html     (pet portraits)
-//   - "Home"        -> home.html      (house portraits)
-//   - "Memories"    -> memories.html  (keepsake / tribute portraits)
+// Layout:  Petting Lounge | Create ▾ · Gallery · My Projects | account
+//   - "Create" ▾ -> Pet (index.html), Home (home.html), Memory (memories.html)
+//   - "Gallery"  -> gallery.html
 //   - "My Projects" -> projects.html
-//   - right link    -> "Account" (account.html) if signed in, else "Sign up" (signup.html)
+//   - right link -> "Account" (account.html) if signed in, else "Sign up" (signup.html)
 //
-// Mark the current page with e.g. <site-nav active="pets"></site-nav>
+// Highlight the current page with <site-nav active="..."> using one of:
+//   pets | home | memories | create   (all highlight the Create button)
+//   gallery | projects
 
 import { supabase } from "./supabaseClient.js";
 
@@ -23,11 +24,15 @@ class SiteNav extends HTMLElement {
       const isRealAccount = !!session && session.user.is_anonymous === false;
       this.render(isRealAccount);
     } catch (e) { /* stay signed-out on error */ }
+
+    // Close the dropdown when clicking anywhere else on the page.
+    document.addEventListener("click", () => this.closeMenu());
   }
 
   render(isRealAccount) {
     const active = this.getAttribute("active") || "";
     const on = (name) => (active === name ? "active" : "");
+    const createActive = ["create", "pets", "home", "memories"].includes(active) ? "active" : "";
 
     const accountHref  = isRealAccount ? "account.html" : "signup.html";
     const accountLabel = isRealAccount ? "Account"      : "Sign up";
@@ -37,10 +42,19 @@ class SiteNav extends HTMLElement {
         <a class="brand" href="index.html">Petting Lounge</a>
 
         <nav class="center">
-          <a href="index.html"     class="${on("pets")}">Pets</a>
-          <a href="home.html"      class="${on("home")}">Home</a>
-          <a href="memories.html"  class="${on("memories")}">Memories</a>
-          <a href="projects.html"  class="${on("projects")}">My Projects</a>
+          <div class="dropdown">
+            <button class="drop-toggle ${createActive}" aria-haspopup="true" aria-expanded="false">
+              Create <span class="caret">▾</span>
+            </button>
+            <div class="menu">
+              <a href="index.html">Pet</a>
+              <a href="home.html">Home</a>
+              <a href="memories.html">Memory</a>
+            </div>
+          </div>
+
+          <a href="gallery.html"  class="${on("gallery")}">Gallery</a>
+          <a href="projects.html" class="${on("projects")}">My Projects</a>
         </nav>
 
         <div class="account">
@@ -48,6 +62,24 @@ class SiteNav extends HTMLElement {
         </div>
       </header>
     `;
+
+    // Toggle the dropdown on click (needed for touch; hover covers desktop).
+    const toggle = this.querySelector(".drop-toggle");
+    if (toggle) {
+      toggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const dd = this.querySelector(".dropdown");
+        const open = dd.classList.toggle("open");
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
+  }
+
+  closeMenu() {
+    const dd = this.querySelector(".dropdown");
+    if (dd) dd.classList.remove("open");
+    const t = this.querySelector(".drop-toggle");
+    if (t) t.setAttribute("aria-expanded", "false");
   }
 }
 
