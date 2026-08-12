@@ -93,12 +93,20 @@ a { color: inherit; }
 .nav .dropdown { position: relative; }
 .nav .drop-toggle { display: inline-flex; align-items: center; gap: 6px; }
 .nav .drop-toggle .caret { font-size: 11px; opacity: .8; }
+
+/* invisible bridge fills the gap so hover never breaks between button and menu */
+.nav .dropdown::after {
+  content: "";
+  position: absolute; top: 100%; left: 0; right: 0; height: 10px;
+}
+
 .nav .dropdown .menu {
   display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
   background: #fff; border: 1px solid var(--brown-line); border-radius: 12px;
   box-shadow: var(--shadow); padding: 6px; min-width: 160px; z-index: 50;
 }
 .nav .dropdown:hover .menu,
+.nav .dropdown:focus-within .menu,
 .nav .dropdown.open .menu { display: block; }
 .nav .dropdown .menu a {
   display: block; padding: 10px 14px; border-radius: 8px;
