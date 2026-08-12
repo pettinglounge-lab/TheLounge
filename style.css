@@ -352,3 +352,32 @@ a { color: inherit; }
   border-radius: 8px; padding: 10px 12px;
 }
 .upload-tip strong { color: var(--ink); }
+
+/* =========================================================================
+   HOMEPAGE product cards (index.html)
+   ========================================================================= */
+.home-hero { text-align: center; padding: 84px 0 56px; }
+.home-hero h1 { font-size: 52px; line-height: 1.05; letter-spacing: -.02em; margin-bottom: 18px; }
+.home-hero p.lead { font-size: 18px; color: var(--ink-soft); max-width: 46ch; margin: 0 auto 28px; }
+.home-hero .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding-bottom: 20px; }
+.product-card {
+  display: block; text-decoration: none; color: inherit;
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 30px; background: #fff;
+  transition: box-shadow .15s ease, transform .1s ease, border-color .15s ease;
+}
+.product-card:hover { box-shadow: var(--shadow); border-color: var(--brown-line); transform: translateY(-2px); }
+.product-card .ic {
+  width: 76px; height: 76px; border-radius: 12px; background: var(--wash);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+}
+.product-card .ic svg { width: 46px; height: 46px; }
+.product-card h3 { font-size: 20px; margin-bottom: 6px; }
+.product-card p { color: var(--ink-soft); font-size: 14px; }
+.product-card .go { margin-top: 14px; color: var(--accent); font-weight: 600; font-size: 14px; }
+
+@media (max-width: 760px) {
+  .home-hero h1 { font-size: 38px; }
+  .cards { grid-template-columns: 1fr; }
+}
