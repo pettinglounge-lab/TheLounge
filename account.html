@@ -28,11 +28,11 @@
         <span class="label">Member since</span>
         <span class="value" id="since">—</span>
       </div>
-
-      <div class="account-actions">
-        <button class="btn btn-outline" id="logout">Log out</button>
-        <a class="btn btn-outline" href="mailto:support@pettinglounge.com?subject=Support%20request">Contact support</a>
+      <div class="info-row">
+        <span class="label">Password</span>
+        <button class="btn btn-outline btn-sm" id="reset">Send reset link</button>
       </div>
+      <p class="msg" id="reset-msg"></p>
     </section>
 
     <!-- ORDERS -->
@@ -42,13 +42,21 @@
         <div class="empty">Loading…</div>
       </div>
     </section>
+
+    <!-- BOTTOM ACTIONS -->
+    <div class="account-actions bottom">
+      <a class="btn btn-outline" href="mailto:support@pettinglounge.com?subject=Support%20request">Contact support</a>
+      <button class="btn btn-outline" id="logout">Log out</button>
+    </div>
   </main>
 
   <!-- account logic -->
   <script type="module">
     import { supabase } from "./supabaseClient.js";
 
-    // 1. Require a real (non-guest) account. Otherwise send to login.
+    let userEmail = null;
+
+    // 1. Require a real (non-guest) account.
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || session.user.is_anonymous === true) {
       window.location.href = "login.html";
@@ -57,15 +65,15 @@
       loadOrders();
     }
 
-    // 2. Fill in account details.
     function showAccount(user) {
+      userEmail = user.email;
       document.getElementById("email").textContent = user.email;
       const d = new Date(user.created_at);
       document.getElementById("since").textContent =
         d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
     }
 
-    // 3. Load this user's orders (RLS returns only their own rows).
+    // 2. Orders (RLS returns only this user's rows).
     async function loadOrders() {
       const box = document.getElementById("orders");
       const { data: orders, error } = await supabase
@@ -73,18 +81,13 @@
         .select("id, created_at, status, amount_total")
         .order("created_at", { ascending: false });
 
-      if (error) {
-        box.innerHTML = `<div class="empty">Couldn't load orders right now.</div>`;
-        return;
-      }
+      if (error) { box.innerHTML = `<div class="empty">Couldn't load orders right now.</div>`; return; }
       if (!orders || orders.length === 0) {
         box.innerHTML = `<div class="empty">No orders yet. <a href="index.html">Create your first portrait →</a></div>`;
         return;
       }
-
       box.innerHTML = orders.map((o) => {
-        const date = new Date(o.created_at).toLocaleDateString(undefined,
-          { year: "numeric", month: "short", day: "numeric" });
+        const date = new Date(o.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
         const amount = o.amount_total != null ? "$" + (o.amount_total / 100).toFixed(2) : "";
         const shortId = o.id.slice(0, 8).toUpperCase();
         return `
@@ -100,6 +103,21 @@
           </div>`;
       }).join("");
     }
+
+    // 3. Send password reset link.
+    const resetBtn = document.getElementById("reset");
+    const resetMsg = document.getElementById("reset-msg");
+    resetBtn.addEventListener("click", async () => {
+      resetBtn.disabled = true; resetBtn.textContent = "Sending…";
+      resetMsg.textContent = ""; resetMsg.className = "msg";
+
+      const redirectTo = new URL("reset-password.html", window.location.href).href;
+      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, { redirectTo });
+
+      if (error) { resetMsg.textContent = error.message; resetMsg.className = "msg err"; }
+      else { resetMsg.textContent = "✓ Check your email for a password reset link."; resetMsg.className = "msg ok"; }
+      resetBtn.disabled = false; resetBtn.textContent = "Send reset link";
+    });
 
     // 4. Log out.
     document.getElementById("logout").addEventListener("click", async () => {
