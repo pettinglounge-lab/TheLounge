@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Projects — Petting Lounge</title>
+  <title>My Projects — Petting Lounge</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,37 +31,37 @@
       </div>
       <input type="file" id="file" accept="image/*" hidden />
 
+      <!-- photo tip -->
+      <p class="upload-tip">
+        <strong>Tip:</strong> photos taken in bright, direct light work best — try to avoid strong shadows.
+      </p>
+
       <textarea id="note" placeholder="Add any notes (optional) — e.g. 'sage green background, add the name Biscuit'"></textarea>
 
       <button class="btn btn-primary" id="create" disabled>Create project</button>
       <p class="msg" id="msg"></p>
     </section>
 
-    <!-- SAVED PROJECTS -->
-    <section>
+    <!-- SAVED PROJECTS (signed-in only) -->
+    <section id="saved-section" style="display:none;">
       <h2>Saved</h2>
-      <div id="projects" class="project-grid">
-        <div class="empty">Loading…</div>
-      </div>
+      <div id="projects" class="project-grid"></div>
     </section>
   </main>
 
   <script type="module">
     import { supabase } from "./supabaseClient.js";
 
-    // ---- require a signed-in account (Projects is behind login) ----
+    // Page is open to everyone.
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session || session.user.is_anonymous === true) {
-      window.location.href = "login.html";
-    }
-    const userId = session?.user?.id;
+    const isRealAccount = !!session && session.user.is_anonymous === false;
 
-    const drop   = document.getElementById("drop");
-    const fileIn = document.getElementById("file");
-    const fname  = document.getElementById("fname");
-    const note   = document.getElementById("note");
+    const drop     = document.getElementById("drop");
+    const fileIn   = document.getElementById("file");
+    const fname    = document.getElementById("fname");
+    const note     = document.getElementById("note");
     const createBtn = document.getElementById("create");
-    const msg    = document.getElementById("msg");
+    const msg      = document.getElementById("msg");
     let selectedFile = null;
 
     // ---- pick / drop a file ----
@@ -69,11 +69,18 @@
     drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } });
     ["dragover", "dragenter"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("drag"); }));
     ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("drag"); }));
-    drop.addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) pick(e.dataTransfer.files[0]); });
+    drop.addEventListener("drop", (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) pick(e.dataTransfer.files[0]); });
     fileIn.addEventListener("change", (e) => { if (e.target.files[0]) pick(e.target.files[0]); });
 
     function pick(file) {
       if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
+
+      // Guests must create an account before uploading.
+      if (!isRealAccount) {
+        window.location.href = "signup.html";
+        return;
+      }
+
       selectedFile = file;
       drop.classList.add("has-file");
       fname.textContent = "✓ " + file.name;
@@ -87,31 +94,25 @@
       msg.textContent = ""; msg.className = "msg";
 
       try {
-        // 1. upload photo into the user's folder
         const ext = selectedFile.name.split(".").pop();
-        const photoPath = `${userId}/${crypto.randomUUID()}.${ext}`;
+        const photoPath = `${session.user.id}/${crypto.randomUUID()}.${ext}`;
         const up = await supabase.storage.from("pet-photos")
           .upload(photoPath, selectedFile, { contentType: selectedFile.type });
         if (up.error) throw up.error;
 
-        // 2. save a portraits row (note goes in config)
         const ins = await supabase.from("portraits").insert({
-          user_id: userId,
+          user_id: session.user.id,
           photo_path: photoPath,
           config: { note: note.value.trim() || null },
           status: "draft",
         });
         if (ins.error) throw ins.error;
 
-        // 3. reset + refresh
-        selectedFile = null;
-        fileIn.value = "";
-        note.value = "";
-        drop.classList.remove("has-file");
-        fname.textContent = "";
+        selectedFile = null; fileIn.value = ""; note.value = "";
+        drop.classList.remove("has-file"); fname.textContent = "";
         msg.textContent = "✓ Project created.";
         msg.className = "msg ok";
-        loadProjects();
+        loadSaved();
       } catch (e) {
         msg.textContent = "Something went wrong: " + e.message;
         msg.className = "msg err";
@@ -120,35 +121,33 @@
       }
     });
 
-    // ---- load saved projects ----
-    async function loadProjects() {
+    // ---- saved projects (signed-in only) ----
+    async function loadSaved() {
+      const section = document.getElementById("saved-section");
       const box = document.getElementById("projects");
+      section.style.display = "block";
+      box.innerHTML = `<div class="empty">Loading…</div>`;
+
       const { data: rows, error } = await supabase
         .from("portraits")
-        .select("id, photo_path, render_path, config, status, created_at")
+        .select("id, photo_path, config, status, created_at")
         .order("created_at", { ascending: false });
 
-      if (error) { box.innerHTML = `<div class="empty">Couldn't load projects.</div>`; return; }
-      if (!rows || rows.length === 0) {
+      if (error || !rows || rows.length === 0) {
         box.innerHTML = `<div class="empty">No projects yet — upload a photo above to start.</div>`;
         return;
       }
 
-      // get a temporary viewable URL for each private photo
       const cards = await Promise.all(rows.map(async (r) => {
-        let url = "";
         const { data: signed } = await supabase.storage.from("pet-photos").createSignedUrl(r.photo_path, 3600);
-        url = signed?.signedUrl || "";
+        const url = signed?.signedUrl || "";
         const date = new Date(r.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-        const noteText = r.config?.note;
-        const noteHtml = noteText
-          ? `<div class="note">${escapeHtml(noteText)}</div>`
-          : `<div class="note none">No notes</div>`;
+        const label = r.config?.note ? escapeHtml(r.config.note) : "Untitled";
         return `
           <div class="project-card">
-            <img src="${url}" alt="Uploaded photo" />
+            <img src="${url}" alt="Project photo" />
             <div class="body">
-              ${noteHtml}
+              <div class="note">${label}</div>
               <div class="meta"><span>${r.status}</span><span>${date}</span></div>
             </div>
           </div>`;
@@ -160,7 +159,7 @@
       return s.replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     }
 
-    loadProjects();
+    if (isRealAccount) loadSaved();
   </script>
 
   <script type="module" src="Navbar.js"></script>
