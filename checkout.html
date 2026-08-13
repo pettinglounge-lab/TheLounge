@@ -21,11 +21,6 @@
   <script type="module">
     import { supabase } from "./supabaseClient.js";
 
-    const PRICES = {
-      '11" x 14"': 79, '12" x 16"': 89, '16" x 16"': 99, '16" x 20"': 109,
-      '16" x 24"': 129, '20" x 30"': 149, '12" x 36"': 159,
-    };
-
     const root = document.getElementById("root");
 
     // Read what the pet page stashed in the browser.
@@ -48,21 +43,21 @@
     }
 
     function renderCheckout() {
-      const price = PRICES[order.size] ?? 99;
+      const price = order.price ?? 0;
       root.innerHTML = `
         <div class="checkout">
           <div class="preview-panel" id="preview">
             <div class="preview-loading">
               <div class="spinner"></div>
-              Creating your portrait preview…<br />this takes a few seconds.
+              Loading your portrait…
             </div>
           </div>
 
           <div class="summary">
-            <h1>Custom Dog Portrait</h1>
-            <p class="sub">Framed canvas · printed &amp; shipped</p>
+            <h1>${escapeHtml(order.title || "Custom Pet Portrait")}</h1>
+            <p class="sub">Printed &amp; shipped</p>
 
-            <div class="row"><span class="label">Canvas size</span><span class="value">${order.size}</span></div>
+            <div class="row"><span class="label">Size</span><span class="value">${escapeHtml(order.size || "—")}</span></div>
             <div class="row"><span class="label">Pet's name</span><span class="value">${order.petName ? escapeHtml(order.petName) : "—"}</span></div>
             <div class="row"><span class="label">Shipping</span><span class="value">Free</span></div>
             <div class="row total"><span>Total</span><span>$${price}</span></div>
@@ -77,38 +72,18 @@
         alert("Payment coming soon — this is where Stripe will take over, then we submit to Printify.");
       });
 
-      generatePreview(price);
+      showPreview();
     }
 
-    // Show the preview generated in the popup. Only regenerate if we somehow
-    // arrived here without one.
-    async function generatePreview(price) {
+    // Show the preview generated in the popup (carried over — never regenerated here).
+    async function showPreview() {
       const panel = document.getElementById("preview");
-
       if (presetPreview) {
         panel.innerHTML = `<img src="${presetPreview}" alt="Your portrait preview" />`;
         document.getElementById("pay").disabled = false;
         return;
       }
-
-      try {
-        const blob = dataURLtoBlob(photoDataUrl);
-        const fd = new FormData();
-        fd.append("image", blob, "photo.jpg");
-        fd.append("note", order.petName ? `add the name ${order.petName}` : "");
-
-        const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
-        if (error) throw error;
-
-        panel.innerHTML = `<img src="${data.previewUrl}" alt="Your portrait preview" />`;
-        document.getElementById("pay").disabled = false;
-      } catch (e) {
-        panel.innerHTML = `
-          <div class="preview-loading">
-            Couldn't create the preview right now.<br />
-            <span style="font-size:12px;">${escapeHtml(String(e.message || e))}</span>
-          </div>`;
-      }
+      panel.innerHTML = `<div class="preview-loading">No preview found — please start again from the product page.</div>`;
     }
 
     function dataURLtoBlob(dataUrl) {
