@@ -18,7 +18,7 @@
   <section class="container hero">
     <div>
       <h1>Your pet,<br />beautifully drawn.</h1>
-      <p class="lead">Choose a framed canvas below, upload one photo, and we'll turn it into a clean, modern portrait — printed and shipped to your door.</p>
+      <p class="lead">Choose a framed canvas below, upload one photo, and see your portrait right away — printed and shipped to your door.</p>
       <div class="cta-row">
         <a href="#choose" class="btn btn-primary">Choose your canvas</a>
         <a href="gallery.html" class="btn btn-outline">See examples</a>
@@ -58,7 +58,7 @@
       <p class="sub">Three simple steps.</p>
       <div class="grid">
         <div class="step"><div class="num">1</div><h3>Pick a canvas &amp; size</h3><p>Choose the look and the size that fits your space.</p></div>
-        <div class="step"><div class="num">2</div><h3>Upload a photo</h3><p>Add your favorite pet photo and their name, if you like.</p></div>
+        <div class="step"><div class="num">2</div><h3>Upload &amp; preview</h3><p>Add your pet's photo and see your portrait right away.</p></div>
         <div class="step"><div class="num">3</div><h3>We create &amp; ship</h3><p>We craft your portrait and deliver it to your door.</p></div>
       </div>
     </div>
@@ -83,7 +83,13 @@
     <div class="modal">
       <button class="modal-close" id="close" aria-label="Close">×</button>
       <div class="modal-grid">
-        <div class="modal-preview"><img id="mp-img" src="" alt="Selected canvas" /></div>
+        <div class="modal-preview" id="mp-panel">
+          <img id="mp-img" src="" alt="Preview" />
+          <div class="mp-loading" id="mp-loading" style="display:none;">
+            <div class="spinner"></div>
+            Creating your portrait…<br />this takes a few seconds.
+          </div>
+        </div>
         <div class="modal-form">
           <h2>Custom Dog Portrait</h2>
           <p class="modal-sub">Framed canvas · printed &amp; shipped</p>
@@ -97,15 +103,19 @@
             <div id="fname" style="margin-top:6px;"></div>
           </div>
           <input type="file" id="file" accept="image/*" hidden />
-          <p class="upload-tip">
-            <strong>Tip:</strong> photos in bright, direct light work best — avoid strong shadows.
-          </p>
+          <p class="upload-tip"><strong>Tip:</strong> photos in bright, direct light work best — avoid strong shadows.</p>
 
           <label class="field-label">Pet's name (optional)</label>
           <input type="text" id="petName" maxlength="30" placeholder="e.g. Biscuit" />
 
-          <button class="btn btn-primary" id="submit">Continue</button>
+          <!-- actions -->
+          <button class="btn btn-primary" id="generate">Generate preview</button>
+          <div id="postgen" style="display:none;">
+            <a class="btn btn-primary" id="continue" style="width:100%; text-align:center;">Continue to checkout</a>
+            <button class="btn btn-outline btn-sm" id="regen" style="width:100%; margin-top:8px;">Regenerate</button>
+          </div>
           <p class="msg" id="msg"></p>
+          <p class="attempts-note" id="attempts"></p>
         </div>
       </div>
     </div>
@@ -114,7 +124,6 @@
   <script type="module">
     import { supabase } from "./supabaseClient.js";
 
-    // The 5 framed dog products (same canvas, different looks).
     const PRODUCTS = [
       { img: "assets/dogframe1.png" },
       { img: "assets/dogframe2.png" },
@@ -122,32 +131,40 @@
       { img: "assets/dogframe4.png" },
       { img: "assets/dogframe5.png" },
     ];
-
     const SIZES = ['11" x 14"', '12" x 16"', '12" x 36"', '16" x 20"', '16" x 24"', '20" x 30"', '16" x 16"'];
+    const LIMIT = 3; // previews per photo per day
 
-    // ---- render the product strip ----
+    // ---- product strip ----
     document.getElementById("strip").innerHTML = PRODUCTS.map((p, i) => `
       <button class="product-tile" data-i="${i}">
         <img src="${p.img}" alt="Dog portrait style ${i + 1}" onerror="this.style.opacity=.15" />
         <span class="pick">Select</span>
       </button>`).join("");
 
-    // ---- modal wiring ----
-    const overlay = document.getElementById("overlay");
-    const mpImg   = document.getElementById("mp-img");
+    // ---- refs ----
+    const overlay  = document.getElementById("overlay");
+    const mpPanel  = document.getElementById("mp-panel");
+    const mpImg    = document.getElementById("mp-img");
+    const mpLoad   = document.getElementById("mp-loading");
     const sizeList = document.getElementById("sizeList");
-    const drop    = document.getElementById("drop");
-    const fileIn  = document.getElementById("file");
-    const fname   = document.getElementById("fname");
-    const petName = document.getElementById("petName");
-    const submit  = document.getElementById("submit");
-    const msg     = document.getElementById("msg");
+    const drop     = document.getElementById("drop");
+    const fileIn   = document.getElementById("file");
+    const fname    = document.getElementById("fname");
+    const petName  = document.getElementById("petName");
+    const genBtn   = document.getElementById("generate");
+    const postgen  = document.getElementById("postgen");
+    const continueBtn = document.getElementById("continue");
+    const regenBtn = document.getElementById("regen");
+    const msg      = document.getElementById("msg");
+    const attempts = document.getElementById("attempts");
 
     let selectedProduct = null;
     let selectedSize = SIZES[0];
     let selectedFile = null;
+    let scaledDataUrl = null;
+    let previewUrl = null;
 
-    // render size options
+    // ---- size options ----
     sizeList.innerHTML = SIZES.map((s, i) => `
       <div class="size-opt" role="radio" aria-checked="${i === 0 ? "true" : "false"}" data-size="${s}">${s}</div>`).join("");
     sizeList.addEventListener("click", (e) => {
@@ -157,28 +174,28 @@
       selectedSize = opt.dataset.size;
     });
 
-    // open modal
+    // ---- open / close ----
     document.getElementById("strip").addEventListener("click", (e) => {
       const tile = e.target.closest(".product-tile"); if (!tile) return;
       selectedProduct = PRODUCTS[tile.dataset.i];
-      mpImg.src = selectedProduct.img;
       resetModal();
+      mpImg.src = selectedProduct.img;
       overlay.classList.add("open");
     });
-
     function resetModal() {
-      selectedFile = null; fileIn.value = ""; petName.value = "";
+      selectedFile = null; scaledDataUrl = null; previewUrl = null;
+      fileIn.value = ""; petName.value = "";
       drop.classList.remove("has-file"); fname.textContent = "";
-      msg.textContent = ""; msg.className = "msg";
-      submit.disabled = false; submit.textContent = "Continue";
+      msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
+      genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
+      postgen.style.display = "none";
+      mpLoad.style.display = "none";
     }
-
-    // close modal
     function closeModal() { overlay.classList.remove("open"); }
     document.getElementById("close").addEventListener("click", closeModal);
     overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
 
-    // file pick / drop
+    // ---- file pick ----
     drop.addEventListener("click", () => fileIn.click());
     drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } });
     ["dragover", "dragenter"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("drag"); }));
@@ -189,36 +206,97 @@
     function pick(file) {
       if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
       selectedFile = file;
-      drop.classList.add("has-file");
-      fname.textContent = "✓ " + file.name;
+      scaledDataUrl = null; previewUrl = null;
+      drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
+      // reset to "generate" state and show product image again
+      genBtn.style.display = "block"; postgen.style.display = "none";
+      msg.textContent = ""; attempts.textContent = "";
+      if (selectedProduct) mpImg.src = selectedProduct.img;
+      showRemaining(file);
     }
 
-    // ---- continue: stash choices + photo in the browser, go to checkout ----
-    // No login, no database — guests flow straight through to checkout.
-    submit.addEventListener("click", async () => {
+    // ---- browser-side limit: 3 previews per photo per day ----
+    function fingerprint(file) { return `${file.name}_${file.size}_${file.lastModified}`; }
+    function readMap() { try { return JSON.parse(localStorage.getItem("ptl_attempts") || "{}"); } catch { return {}; } }
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function used(file) {
+      const rec = readMap()[fingerprint(file)];
+      return (rec && rec.day === today()) ? rec.count : 0;
+    }
+    function bump(file) {
+      const map = readMap(); const fp = fingerprint(file);
+      const rec = (map[fp] && map[fp].day === today()) ? map[fp] : { day: today(), count: 0 };
+      rec.count += 1; map[fp] = rec;
+      localStorage.setItem("ptl_attempts", JSON.stringify(map));
+      return rec.count;
+    }
+    function showRemaining(file) {
+      const left = LIMIT - used(file);
+      attempts.textContent = left > 0 ? `${left} preview${left === 1 ? "" : "s"} left for this photo today` : "No previews left for this photo today";
+    }
+
+    // ---- generate ----
+    async function generate() {
       msg.textContent = ""; msg.className = "msg";
       if (!selectedFile) { msg.textContent = "Please upload a photo first."; msg.className = "msg err"; return; }
-
-      submit.disabled = true; submit.textContent = "Preparing…";
-      try {
-        const photoDataUrl = await fileToScaledDataUrl(selectedFile, 1280);
-        const order = {
-          product: "framed-dog-canvas",
-          productImg: selectedProduct.img,
-          size: selectedSize,
-          petName: petName.value.trim() || null,
-        };
-        sessionStorage.setItem("ptl_order", JSON.stringify(order));
-        sessionStorage.setItem("ptl_photo", photoDataUrl);
-        window.location.href = "checkout.html";
-      } catch (e) {
-        msg.textContent = "Something went wrong: " + e.message;
+      if (used(selectedFile) >= LIMIT) {
+        msg.textContent = "You've used all 3 previews for this photo today. Try a different photo.";
         msg.className = "msg err";
-        submit.disabled = false; submit.textContent = "Continue";
+        return;
       }
+
+      setLoading(true);
+      try {
+        if (!scaledDataUrl) scaledDataUrl = await fileToScaledDataUrl(selectedFile, 1280);
+        const blob = dataURLtoBlob(scaledDataUrl);
+        const fd = new FormData();
+        fd.append("image", blob, "photo.jpg");
+        fd.append("note", petName.value.trim() ? `add the name ${petName.value.trim()}` : "");
+
+        const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
+        if (error) throw error;
+
+        previewUrl = data.previewUrl;
+        mpImg.src = previewUrl;
+
+        const count = bump(selectedFile);
+        const left = LIMIT - count;
+
+        genBtn.style.display = "none";
+        postgen.style.display = "block";
+        if (left > 0) { regenBtn.style.display = "block"; regenBtn.disabled = false; regenBtn.textContent = `Regenerate (${left} left)`; }
+        else { regenBtn.style.display = "none"; }
+        attempts.textContent = left > 0 ? `${left} preview${left === 1 ? "" : "s"} left for this photo today` : "That was your last preview for this photo today";
+      } catch (e) {
+        msg.textContent = "Couldn't generate: " + (e.message || e);
+        msg.className = "msg err";
+      } finally {
+        setLoading(false);
+      }
+    }
+    genBtn.addEventListener("click", generate);
+    regenBtn.addEventListener("click", generate);
+
+    function setLoading(on) {
+      mpLoad.style.display = on ? "flex" : "none";
+      genBtn.disabled = on; regenBtn.disabled = on; continueBtn.style.pointerEvents = on ? "none" : "auto";
+    }
+
+    // ---- continue to checkout (carries the preview so it isn't regenerated) ----
+    continueBtn.addEventListener("click", () => {
+      const order = {
+        product: "framed-dog-canvas",
+        productImg: selectedProduct.img,
+        size: selectedSize,
+        petName: petName.value.trim() || null,
+      };
+      sessionStorage.setItem("ptl_order", JSON.stringify(order));
+      sessionStorage.setItem("ptl_photo", scaledDataUrl);
+      sessionStorage.setItem("ptl_preview", previewUrl);
+      window.location.href = "checkout.html";
     });
 
-    // downscale a photo to a max dimension and return a JPEG data URL (keeps sessionStorage small)
+    // ---- helpers ----
     function fileToScaledDataUrl(file, maxDim) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -235,12 +313,17 @@
             canvas.getContext("2d").drawImage(img, 0, 0, width, height);
             resolve(canvas.toDataURL("image/jpeg", 0.85));
           };
-          img.onerror = reject;
-          img.src = reader.result;
+          img.onerror = reject; img.src = reader.result;
         };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+        reader.onerror = reject; reader.readAsDataURL(file);
       });
+    }
+    function dataURLtoBlob(dataUrl) {
+      const [head, b64] = dataUrl.split(",");
+      const mime = head.match(/:(.*?);/)[1];
+      const bin = atob(b64); const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new Blob([arr], { type: mime });
     }
   </script>
 
