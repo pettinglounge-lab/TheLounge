@@ -14,18 +14,17 @@
 
   <site-nav active="pets"></site-nav>
 
-  <!-- ================= HERO ================= -->
+  <!-- HERO -->
   <section class="container hero">
     <div>
       <h1>Your pet,<br />beautifully drawn.</h1>
-      <p class="lead">Choose a framed canvas below, upload one photo, and see your portrait right away — printed and shipped to your door.</p>
+      <p class="lead">Pick a product, upload one photo, and see your portrait right away — printed and shipped to your door.</p>
       <div class="cta-row">
-        <a href="#choose" class="btn btn-primary">Choose your canvas</a>
+        <a href="#choose" class="btn btn-primary">Choose a product</a>
         <a href="gallery.html" class="btn btn-outline">See examples</a>
       </div>
       <p class="reassure">Free shipping · Ships in 3–5 days · Loved by 10,000+ pet owners</p>
     </div>
-
     <div class="frame">
       <div class="art">
         <svg viewBox="0 0 120 120" fill="none" stroke="#141414" stroke-width="3"
@@ -37,34 +36,20 @@
           <circle cx="70" cy="54" r="2.6" fill="#141414" stroke="none" />
           <path d="M60 64 L60 70 Q56 74 52 71" />
           <path d="M60 70 Q64 74 68 71" />
-          <path d="M56 62 Q60 66 64 62" />
         </svg>
         <div class="petname">Biscuit</div>
       </div>
     </div>
   </section>
 
-  <!-- ================= PRODUCT STRIP ================= -->
+  <!-- PRODUCT ROWS -->
   <div id="choose" class="strip-head">
-    <h2>Choose your portrait</h2>
-    <p>Same premium framed canvas — pick a look to get started.</p>
+    <h2>Choose your product</h2>
+    <p>Pick a product and a style to get started.</p>
   </div>
-  <div class="product-strip" id="strip"></div>
+  <div id="rows"><div class="empty" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading products…</div></div>
 
-  <!-- ================= STEPS ================= -->
-  <section class="steps" style="margin-top:56px;">
-    <div class="container">
-      <h2>How it works</h2>
-      <p class="sub">Three simple steps.</p>
-      <div class="grid">
-        <div class="step"><div class="num">1</div><h3>Pick a canvas &amp; size</h3><p>Choose the look and the size that fits your space.</p></div>
-        <div class="step"><div class="num">2</div><h3>Upload &amp; preview</h3><p>Add your pet's photo and see your portrait right away.</p></div>
-        <div class="step"><div class="num">3</div><h3>We create &amp; ship</h3><p>We craft your portrait and deliver it to your door.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= FOOTER ================= -->
+  <!-- FOOTER -->
   <footer class="footer">
     <div class="container">
       <span class="brand">Petting Lounge</span>
@@ -78,7 +63,7 @@
     </div>
   </footer>
 
-  <!-- ================= MODAL ================= -->
+  <!-- MODAL -->
   <div class="modal-overlay" id="overlay">
     <div class="modal">
       <button class="modal-close" id="close" aria-label="Close">×</button>
@@ -91,10 +76,10 @@
           </div>
         </div>
         <div class="modal-form">
-          <h2>Custom Dog Portrait</h2>
-          <p class="modal-sub">Framed canvas · printed &amp; shipped</p>
+          <h2 id="modal-title">Custom Pet Portrait</h2>
+          <p class="modal-sub" id="modal-sub">Printed &amp; shipped</p>
 
-          <label class="field-label">Canvas size</label>
+          <label class="field-label">Size</label>
           <div class="size-list" id="sizeList"></div>
 
           <label class="field-label">Upload your pet's photo</label>
@@ -108,7 +93,6 @@
           <label class="field-label">Pet's name (optional)</label>
           <input type="text" id="petName" maxlength="30" placeholder="e.g. Biscuit" />
 
-          <!-- actions -->
           <button class="btn btn-primary" id="generate">Generate preview</button>
           <div id="postgen" style="display:none;">
             <a class="btn btn-primary" id="continue" style="width:100%; text-align:center;">Continue to checkout</a>
@@ -124,26 +108,37 @@
   <script type="module">
     import { supabase } from "./supabaseClient.js";
 
-    const PRODUCTS = [
-      { img: "assets/dogframe1.png" },
-      { img: "assets/dogframe2.png" },
-      { img: "assets/dogframe3.png" },
-      { img: "assets/dogframe4.png" },
-      { img: "assets/dogframe5.png" },
-    ];
-    const SIZES = ['11" x 14"', '12" x 16"', '12" x 36"', '16" x 20"', '16" x 24"', '20" x 30"', '16" x 16"'];
     const LIMIT = 3; // previews per photo per day
 
-    // ---- product strip ----
-    document.getElementById("strip").innerHTML = PRODUCTS.map((p, i) => `
-      <button class="product-tile" data-i="${i}">
-        <img src="${p.img}" alt="Dog portrait style ${i + 1}" onerror="this.style.opacity=.15" />
-        <span class="pick">Select</span>
-      </button>`).join("");
+    // Product rows: label + which asset images to show. Sizes/prices come from Printify.
+    const ROWS = [
+      { type: "framed-poster", label: "Framed Art",    images: [1,2,3,4,5].map(n => `assets/dogframe${n}.png`) },
+      { type: "greeting-card", label: "Greeting Card", images: [1,2,3,4,5].map(n => `assets/card${n}.png`) },
+      { type: "poster",        label: "Rolled Poster", images: [1,2,3,4,5].map(n => `assets/poster${n}.png`) },
+    ];
+
+    let productsByType = {};   // product_type -> product row from DB
+
+    // ---- load catalog + render rows ----
+    async function init() {
+      const { data } = await supabase.from("products").select("*").eq("category", "pet");
+      (data || []).forEach(p => { productsByType[p.product_type] = p; });
+
+      document.getElementById("rows").innerHTML = ROWS.map(row => `
+        <section class="product-row">
+          <h3 class="row-title">${row.label}</h3>
+          <div class="product-strip">
+            ${row.images.map((img, i) => `
+              <button class="product-tile" data-type="${row.type}" data-img="${img}">
+                <img src="${img}" alt="${row.label} ${i + 1}" onerror="this.style.opacity=.15" />
+                <span class="pick">Select</span>
+              </button>`).join("")}
+          </div>
+        </section>`).join("");
+    }
 
     // ---- refs ----
     const overlay  = document.getElementById("overlay");
-    const mpPanel  = document.getElementById("mp-panel");
     const mpImg    = document.getElementById("mp-img");
     const mpLoad   = document.getElementById("mp-loading");
     const sizeList = document.getElementById("sizeList");
@@ -157,40 +152,60 @@
     const regenBtn = document.getElementById("regen");
     const msg      = document.getElementById("msg");
     const attempts = document.getElementById("attempts");
+    const mTitle   = document.getElementById("modal-title");
+    const mSub     = document.getElementById("modal-sub");
 
     let selectedProduct = null;
-    let selectedSize = SIZES[0];
+    let selectedImg = null;
+    let selectedVariant = null;
     let selectedFile = null;
     let scaledDataUrl = null;
     let previewUrl = null;
 
-    // ---- size options ----
-    sizeList.innerHTML = SIZES.map((s, i) => `
-      <div class="size-opt" role="radio" aria-checked="${i === 0 ? "true" : "false"}" data-size="${s}">${s}</div>`).join("");
+    // ---- open modal ----
+    document.getElementById("rows").addEventListener("click", (e) => {
+      const tile = e.target.closest(".product-tile"); if (!tile) return;
+      const product = productsByType[tile.dataset.type];
+      if (!product || !product.available || !(product.variants || []).length) {
+        alert("This product is currently unavailable. Please try another."); return;
+      }
+      openModal(product, tile.dataset.img);
+    });
+
+    function openModal(product, img) {
+      selectedProduct = product;
+      selectedImg = img;
+      resetModal();
+      mpImg.src = img;
+      mTitle.textContent = product.title || "Custom Pet Portrait";
+      mSub.textContent = "Printed & shipped";
+
+      // sizes from Printify variants
+      sizeList.innerHTML = product.variants.map((v, i) => `
+        <div class="size-opt" role="radio" aria-checked="${i === 0 ? "true" : "false"}" data-i="${i}">
+          ${v.size} <span class="price">· $${v.price}</span>
+        </div>`).join("");
+      selectedVariant = product.variants[0];
+
+      overlay.classList.add("open");
+    }
+
     sizeList.addEventListener("click", (e) => {
       const opt = e.target.closest(".size-opt"); if (!opt) return;
       sizeList.querySelectorAll(".size-opt").forEach(o => o.setAttribute("aria-checked", "false"));
       opt.setAttribute("aria-checked", "true");
-      selectedSize = opt.dataset.size;
+      selectedVariant = selectedProduct.variants[Number(opt.dataset.i)];
     });
 
-    // ---- open / close ----
-    document.getElementById("strip").addEventListener("click", (e) => {
-      const tile = e.target.closest(".product-tile"); if (!tile) return;
-      selectedProduct = PRODUCTS[tile.dataset.i];
-      resetModal();
-      mpImg.src = selectedProduct.img;
-      overlay.classList.add("open");
-    });
     function resetModal() {
       selectedFile = null; scaledDataUrl = null; previewUrl = null;
       fileIn.value = ""; petName.value = "";
       drop.classList.remove("has-file"); fname.textContent = "";
       msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
       genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
-      postgen.style.display = "none";
-      mpLoad.style.display = "none";
+      postgen.style.display = "none"; mpLoad.style.display = "none";
     }
+
     function closeModal() { overlay.classList.remove("open"); }
     document.getElementById("close").addEventListener("click", closeModal);
     overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
@@ -205,30 +220,23 @@
 
     function pick(file) {
       if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
-      selectedFile = file;
-      scaledDataUrl = null; previewUrl = null;
+      selectedFile = file; scaledDataUrl = null; previewUrl = null;
       drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
-      // reset to "generate" state and show product image again
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
-      if (selectedProduct) mpImg.src = selectedProduct.img;
+      if (selectedImg) mpImg.src = selectedImg;
       showRemaining(file);
     }
 
-    // ---- browser-side limit: 3 previews per photo per day ----
+    // ---- 3-per-photo/day limit ----
     function fingerprint(file) { return `${file.name}_${file.size}_${file.lastModified}`; }
     function readMap() { try { return JSON.parse(localStorage.getItem("ptl_attempts") || "{}"); } catch { return {}; } }
     function today() { return new Date().toISOString().slice(0, 10); }
-    function used(file) {
-      const rec = readMap()[fingerprint(file)];
-      return (rec && rec.day === today()) ? rec.count : 0;
-    }
+    function used(file) { const r = readMap()[fingerprint(file)]; return (r && r.day === today()) ? r.count : 0; }
     function bump(file) {
       const map = readMap(); const fp = fingerprint(file);
-      const rec = (map[fp] && map[fp].day === today()) ? map[fp] : { day: today(), count: 0 };
-      rec.count += 1; map[fp] = rec;
-      localStorage.setItem("ptl_attempts", JSON.stringify(map));
-      return rec.count;
+      const r = (map[fp] && map[fp].day === today()) ? map[fp] : { day: today(), count: 0 };
+      r.count += 1; map[fp] = r; localStorage.setItem("ptl_attempts", JSON.stringify(map)); return r.count;
     }
     function showRemaining(file) {
       const left = LIMIT - used(file);
@@ -239,11 +247,7 @@
     async function generate() {
       msg.textContent = ""; msg.className = "msg";
       if (!selectedFile) { msg.textContent = "Please upload a photo first."; msg.className = "msg err"; return; }
-      if (used(selectedFile) >= LIMIT) {
-        msg.textContent = "You've used all 3 previews for this photo today. Try a different photo.";
-        msg.className = "msg err";
-        return;
-      }
+      if (used(selectedFile) >= LIMIT) { msg.textContent = "You've used all 3 previews for this photo today. Try a different photo."; msg.className = "msg err"; return; }
 
       setLoading(true);
       try {
@@ -251,6 +255,7 @@
         const blob = dataURLtoBlob(scaledDataUrl);
         const fd = new FormData();
         fd.append("image", blob, "photo.jpg");
+        fd.append("productType", "pet");
         fd.append("note", petName.value.trim() ? `add the name ${petName.value.trim()}` : "");
 
         const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
@@ -261,18 +266,14 @@
 
         const count = bump(selectedFile);
         const left = LIMIT - count;
-
         genBtn.style.display = "none";
         postgen.style.display = "block";
         if (left > 0) { regenBtn.style.display = "block"; regenBtn.disabled = false; regenBtn.textContent = `Regenerate (${left} left)`; }
         else { regenBtn.style.display = "none"; }
         attempts.textContent = left > 0 ? `${left} preview${left === 1 ? "" : "s"} left for this photo today` : "That was your last preview for this photo today";
       } catch (e) {
-        msg.textContent = "Couldn't generate: " + (e.message || e);
-        msg.className = "msg err";
-      } finally {
-        setLoading(false);
-      }
+        msg.textContent = "Couldn't generate: " + (e.message || e); msg.className = "msg err";
+      } finally { setLoading(false); }
     }
     genBtn.addEventListener("click", generate);
     regenBtn.addEventListener("click", generate);
@@ -282,12 +283,19 @@
       genBtn.disabled = on; regenBtn.disabled = on; continueBtn.style.pointerEvents = on ? "none" : "auto";
     }
 
-    // ---- continue to checkout (carries the preview so it isn't regenerated) ----
+    // ---- continue to checkout (carries the exact preview + Printify IDs) ----
     continueBtn.addEventListener("click", () => {
       const order = {
-        product: "framed-dog-canvas",
-        productImg: selectedProduct.img,
-        size: selectedSize,
+        productType: "pet",
+        product_type: selectedProduct.product_type,
+        printify_product_id: selectedProduct.printify_product_id,
+        blueprint_id: selectedProduct.blueprint_id,
+        print_provider_id: selectedProduct.print_provider_id,
+        title: selectedProduct.title,
+        productImg: selectedImg,
+        variantId: selectedVariant.id,
+        size: selectedVariant.size,
+        price: selectedVariant.price,
         petName: petName.value.trim() || null,
       };
       sessionStorage.setItem("ptl_order", JSON.stringify(order));
@@ -304,10 +312,7 @@
           const img = new Image();
           img.onload = () => {
             let { width, height } = img;
-            if (width > maxDim || height > maxDim) {
-              const r = Math.min(maxDim / width, maxDim / height);
-              width = Math.round(width * r); height = Math.round(height * r);
-            }
+            if (width > maxDim || height > maxDim) { const r = Math.min(maxDim / width, maxDim / height); width = Math.round(width * r); height = Math.round(height * r); }
             const canvas = document.createElement("canvas");
             canvas.width = width; canvas.height = height;
             canvas.getContext("2d").drawImage(img, 0, 0, width, height);
@@ -325,6 +330,8 @@
       for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
       return new Blob([arr], { type: mime });
     }
+
+    init();
   </script>
 
   <script type="module" src="Navbar.js"></script>
