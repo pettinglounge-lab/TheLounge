@@ -31,7 +31,6 @@
       </div>
       <input type="file" id="file" accept="image/*" hidden />
 
-      <!-- photo tip -->
       <p class="upload-tip">
         <strong>Tip:</strong> photos taken in bright, direct light work best — try to avoid strong shadows.
       </p>
@@ -52,16 +51,19 @@
   <script type="module">
     import { supabase } from "./supabaseClient.js";
 
-    // Page is open to everyone.
     const { data: { session } } = await supabase.auth.getSession();
+    // My Projects is the one account-only area — send guests to sign up.
+    if (!session || session.user.is_anonymous === true) {
+      window.location.href = "signup.html";
+    }
     const isRealAccount = !!session && session.user.is_anonymous === false;
 
-    const drop     = document.getElementById("drop");
-    const fileIn   = document.getElementById("file");
-    const fname    = document.getElementById("fname");
-    const note     = document.getElementById("note");
+    const drop      = document.getElementById("drop");
+    const fileIn    = document.getElementById("file");
+    const fname     = document.getElementById("fname");
+    const note      = document.getElementById("note");
     const createBtn = document.getElementById("create");
-    const msg      = document.getElementById("msg");
+    const msg       = document.getElementById("msg");
     let selectedFile = null;
 
     // ---- pick / drop a file ----
@@ -74,13 +76,7 @@
 
     function pick(file) {
       if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
-
-      // Guests must create an account before uploading.
-      if (!isRealAccount) {
-        window.location.href = "signup.html";
-        return;
-      }
-
+      if (!isRealAccount) { window.location.href = "signup.html"; return; }
       selectedFile = file;
       drop.classList.add("has-file");
       fname.textContent = "✓ " + file.name;
@@ -92,7 +88,6 @@
       if (!selectedFile) return;
       createBtn.disabled = true; createBtn.textContent = "Creating…";
       msg.textContent = ""; msg.className = "msg";
-
       try {
         const ext = selectedFile.name.split(".").pop();
         const photoPath = `${session.user.id}/${crypto.randomUUID()}.${ext}`;
@@ -110,7 +105,7 @@
 
         selectedFile = null; fileIn.value = ""; note.value = "";
         drop.classList.remove("has-file"); fname.textContent = "";
-        msg.textContent = "✓ Project created.";
+        msg.textContent = "✓ Project created. Hit “Generate portrait” below to make the artwork.";
         msg.className = "msg ok";
         loadSaved();
       } catch (e) {
@@ -121,7 +116,7 @@
       }
     });
 
-    // ---- saved projects (signed-in only) ----
+    // ---- saved projects ----
     async function loadSaved() {
       const section = document.getElementById("saved-section");
       const box = document.getElementById("projects");
@@ -130,7 +125,7 @@
 
       const { data: rows, error } = await supabase
         .from("portraits")
-        .select("id, photo_path, config, status, created_at")
+        .select("id, photo_path, render_path, config, status, created_at")
         .order("created_at", { ascending: false });
 
       if (error || !rows || rows.length === 0) {
@@ -139,20 +134,62 @@
       }
 
       const cards = await Promise.all(rows.map(async (r) => {
-        const { data: signed } = await supabase.storage.from("pet-photos").createSignedUrl(r.photo_path, 3600);
-        const url = signed?.signedUrl || "";
+        const rendered = r.status === "rendered" && r.render_path;
+
+        // Show the rendered artwork if we have it, otherwise the uploaded photo.
+        let imgUrl = "";
+        if (rendered) {
+          imgUrl = supabase.storage.from("portrait-renders").getPublicUrl(r.render_path).data.publicUrl;
+        } else {
+          const { data: signed } = await supabase.storage.from("pet-photos").createSignedUrl(r.photo_path, 3600);
+          imgUrl = signed?.signedUrl || "";
+        }
+
         const date = new Date(r.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
         const label = r.config?.note ? escapeHtml(r.config.note) : "Untitled";
+
+        let action;
+        if (rendered) {
+          action = `<button class="btn btn-outline btn-sm generate" data-id="${r.id}">Regenerate</button>`;
+        } else if (r.status === "rendering") {
+          action = `<span class="badge">rendering…</span>`;
+        } else {
+          action = `<button class="btn btn-primary btn-sm generate" data-id="${r.id}">Generate portrait</button>`;
+        }
+
         return `
           <div class="project-card">
-            <img src="${url}" alt="Project photo" />
+            <img src="${imgUrl}" alt="Project image" />
             <div class="body">
               <div class="note">${label}</div>
               <div class="meta"><span>${r.status}</span><span>${date}</span></div>
+              <div style="margin-top:10px;">${action}</div>
             </div>
           </div>`;
       }));
       box.innerHTML = cards.join("");
+
+      // wire the generate buttons
+      box.querySelectorAll(".generate").forEach((btn) => {
+        btn.addEventListener("click", () => generate(btn));
+      });
+    }
+
+    // ---- call the edge function to render ----
+    async function generate(btn) {
+      const portraitId = btn.dataset.id;
+      btn.disabled = true;
+      btn.textContent = "Rendering… (~15s)";
+      try {
+        const { data, error } = await supabase.functions.invoke("render-portrait", {
+          body: { portraitId },
+        });
+        if (error) throw error;
+        loadSaved(); // refresh to show the finished artwork
+      } catch (e) {
+        alert("Render failed: " + (e.message || e));
+        loadSaved();
+      }
     }
 
     function escapeHtml(s) {
