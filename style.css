@@ -381,3 +381,115 @@ a { color: inherit; }
   .home-hero h1 { font-size: 38px; }
   .cards { grid-template-columns: 1fr; }
 }
+
+/* =========================================================================
+   PET PRODUCT STRIP + MODAL WORKFLOW (pet.html)
+   ========================================================================= */
+.strip-head { text-align: center; padding: 40px 28px 22px; }
+.strip-head h2 { font-size: 28px; letter-spacing: -.01em; margin-bottom: 6px; }
+.strip-head p { color: var(--ink-soft); font-size: 15px; }
+
+/* full-width row of product images */
+.product-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; width: 100%; }
+.product-tile {
+  position: relative; cursor: pointer; border: none; padding: 0; background: var(--wash);
+  overflow: hidden; aspect-ratio: 1 / 1;
+}
+.product-tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s ease; }
+.product-tile:hover img { transform: scale(1.04); }
+.product-tile .pick {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: rgba(20,20,20,.72); color: #fff; text-align: center;
+  padding: 12px; font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .15s ease;
+}
+.product-tile:hover .pick, .product-tile:focus-visible .pick { opacity: 1; }
+
+@media (max-width: 900px) { .product-strip { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 540px) { .product-strip { grid-template-columns: repeat(2, 1fr); } }
+
+/* modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(20,20,20,.5);
+  display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 16px; max-width: 840px; width: 100%; max-height: 92vh;
+  overflow: auto; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.modal-close {
+  position: absolute; top: 12px; right: 14px; border: none; background: transparent;
+  font-size: 28px; line-height: 1; cursor: pointer; color: var(--ink-soft); z-index: 2;
+}
+.modal-close:hover { color: var(--ink); }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.modal-preview { background: var(--wash); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.modal-preview img { max-width: 100%; border-radius: 8px; }
+.modal-form { padding: 32px; }
+.modal-form h2 { font-size: 22px; margin-bottom: 2px; }
+.modal-form .modal-sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 8px; }
+
+.field-label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink); margin: 20px 0 10px; }
+
+.size-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.size-opt {
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 13px;
+  cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ink); background: #fff;
+}
+.size-opt[aria-checked="true"] {
+  border-color: var(--accent); color: var(--accent); font-weight: 600;
+  background: color-mix(in srgb, var(--accent) 8%, #fff);
+}
+
+.modal-form .drop {
+  border: 1.5px dashed var(--line); border-radius: 10px; padding: 22px; text-align: center;
+  cursor: pointer; color: var(--ink-soft); transition: border-color .15s, background .15s, color .15s;
+}
+.modal-form .drop:hover, .modal-form .drop.drag { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, #fff); }
+.modal-form .drop.has-file { border-style: solid; border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.modal-form input[type="text"] {
+  width: 100%; font: inherit; font-size: 15px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.modal-form input[type="text"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.modal-form .btn { width: 100%; margin-top: 22px; }
+.modal-form .msg { margin-top: 14px; font-size: 14px; }
+
+@media (max-width: 640px) { .modal-grid { grid-template-columns: 1fr; } .modal-preview { display: none; } }
+
+/* =========================================================================
+   CHECKOUT (checkout.html)
+   ========================================================================= */
+.checkout {
+  max-width: 1000px; margin: 0 auto; padding: 40px 28px 100px;
+  display: grid; grid-template-columns: 1.1fr .9fr; gap: 36px; align-items: start;
+}
+.preview-panel {
+  background: var(--wash); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 24px; min-height: 380px; display: flex; align-items: center; justify-content: center;
+}
+.preview-panel img { max-width: 100%; border-radius: 8px; box-shadow: var(--shadow); }
+.preview-loading { text-align: center; color: var(--ink-soft); font-size: 14px; }
+.spinner {
+  width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.summary {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow);
+}
+.summary h1 { font-size: 24px; margin-bottom: 2px; }
+.summary .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 20px; }
+.summary .row { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.summary .row .label { color: var(--ink-soft); }
+.summary .row .value { font-weight: 500; text-align: right; }
+.summary .total { font-weight: 700; font-size: 18px; border-bottom: none; padding-top: 14px; }
+.summary .btn { width: 100%; margin-top: 18px; }
+.summary .secure { text-align: center; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; }
+.summary .stub { margin-top: 12px; font-size: 13px; color: var(--ink-soft); background: var(--wash); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; text-align: center; }
+
+.checkout-empty { max-width: 520px; margin: 90px auto; text-align: center; }
+.checkout-empty a { color: var(--accent); font-weight: 600; text-decoration: none; }
+
+@media (max-width: 820px) { .checkout { grid-template-columns: 1fr; } }
