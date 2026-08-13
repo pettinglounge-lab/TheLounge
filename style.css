@@ -502,3 +502,9 @@ a { color: inherit; }
   gap: 8px; color: var(--ink-soft); font-size: 13px; text-align: center; padding: 20px;
 }
 .attempts-note { font-size: 12.5px; color: var(--ink-soft); margin-top: 10px; text-align: center; }
+
+/* product rows (pet.html) */
+.product-row { margin-bottom: 46px; }
+.row-title { font-size: 20px; font-weight: 700; letter-spacing: -.01em; padding: 0 28px 14px; }
+.size-opt .price { color: var(--ink-soft); font-weight: 500; }
+.size-opt[aria-checked="true"] .price { color: var(--accent); }
