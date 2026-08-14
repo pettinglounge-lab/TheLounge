@@ -285,7 +285,7 @@
         const fd = new FormData();
         fd.append("image", blob, "photo.jpg");
         fd.append("productType", "pet");
-        fd.append("note", petName.value.trim() ? `add the name ${petName.value.trim()}` : "");
+        fd.append("note", "");   // name is NOT baked into the image — it's overlaid on the frame later
 
         const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
         if (error) throw error;
