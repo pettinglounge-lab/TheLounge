@@ -79,8 +79,11 @@
           <h2 id="modal-title">Custom Pet Portrait</h2>
           <p class="modal-sub" id="modal-sub">Printed &amp; shipped</p>
 
+          <label class="field-label" id="colorLabel">Frame color</label>
+          <select id="colorSelect" class="select"></select>
+
           <label class="field-label">Size</label>
-          <div class="size-list" id="sizeList"></div>
+          <select id="sizeSelect" class="select"></select>
 
           <label class="field-label">Upload your pet's photo</label>
           <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a photo">
@@ -141,7 +144,9 @@
     const overlay  = document.getElementById("overlay");
     const mpImg    = document.getElementById("mp-img");
     const mpLoad   = document.getElementById("mp-loading");
-    const sizeList = document.getElementById("sizeList");
+    const colorSelect = document.getElementById("colorSelect");
+    const sizeSelect = document.getElementById("sizeSelect");
+    const colorLabel = document.getElementById("colorLabel");
     const drop     = document.getElementById("drop");
     const fileIn   = document.getElementById("file");
     const fname    = document.getElementById("fname");
@@ -172,6 +177,17 @@
       openModal(product, tile.dataset.img);
     });
 
+    const COLOR_ORDER = ["Natural", "White", "Espresso", "Black"];
+    let parsedVariants = [];
+
+    // Split "30\" x 40\" (Vertical) / Natural / 1.25\"" into { sizeLabel, color }.
+    function parseVariants(variants) {
+      return variants.map(v => {
+        const parts = String(v.size).split(" / ").map(s => s.trim());
+        return { id: v.id, price: v.price, sizeLabel: parts[0] || v.size, color: parts[1] || "One color" };
+      });
+    }
+
     function openModal(product, img) {
       selectedProduct = product;
       selectedImg = img;
@@ -180,22 +196,35 @@
       mTitle.textContent = product.title || "Custom Pet Portrait";
       mSub.textContent = "Printed & shipped";
 
-      // sizes from Printify variants
-      sizeList.innerHTML = product.variants.map((v, i) => `
-        <div class="size-opt" role="radio" aria-checked="${i === 0 ? "true" : "false"}" data-i="${i}">
-          ${v.size} <span class="price">· $${v.price}</span>
-        </div>`).join("");
-      selectedVariant = product.variants[0];
+      parsedVariants = parseVariants(product.variants);
 
+      // frame colors present, in preferred order
+      const colors = [...new Set(parsedVariants.map(v => v.color))];
+      colors.sort((a, b) => ((COLOR_ORDER.indexOf(a) + 1 || 99) - (COLOR_ORDER.indexOf(b) + 1 || 99)));
+      const multiColor = colors.length > 1;
+      colorSelect.style.display = multiColor ? "block" : "none";
+      colorLabel.style.display = multiColor ? "block" : "none";
+      colorSelect.innerHTML = colors.map(c => `<option value="${c}">${c}</option>`).join("");
+
+      populateSizes(colors[0]);
       overlay.classList.add("open");
     }
 
-    sizeList.addEventListener("click", (e) => {
-      const opt = e.target.closest(".size-opt"); if (!opt) return;
-      sizeList.querySelectorAll(".size-opt").forEach(o => o.setAttribute("aria-checked", "false"));
-      opt.setAttribute("aria-checked", "true");
-      selectedVariant = selectedProduct.variants[Number(opt.dataset.i)];
-    });
+    // Sizes available for the chosen color.
+    function populateSizes(color) {
+      const sizes = parsedVariants.filter(v => v.color === color);
+      sizeSelect.innerHTML = sizes.map(v =>
+        `<option value="${v.id}">${v.sizeLabel} · $${v.price}</option>`).join("");
+      resolveVariant();
+    }
+
+    function resolveVariant() {
+      const id = Number(sizeSelect.value);
+      selectedVariant = parsedVariants.find(v => v.id === id) || null;
+    }
+
+    colorSelect.addEventListener("change", () => populateSizes(colorSelect.value));
+    sizeSelect.addEventListener("change", resolveVariant);
 
     function resetModal() {
       selectedFile = null; scaledDataUrl = null; previewUrl = null;
@@ -294,7 +323,8 @@
         title: selectedProduct.title,
         productImg: selectedImg,
         variantId: selectedVariant.id,
-        size: selectedVariant.size,
+        size: selectedVariant.sizeLabel,
+        frameColor: selectedVariant.color,
         price: selectedVariant.price,
         petName: petName.value.trim() || null,
       };
