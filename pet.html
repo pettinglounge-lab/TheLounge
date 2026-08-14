@@ -69,7 +69,10 @@
       <button class="modal-close" id="close" aria-label="Close">×</button>
       <div class="modal-grid">
         <div class="modal-preview" id="mp-panel">
-          <img id="mp-img" src="" alt="Preview" />
+          <div class="mockup-stage" id="stage">
+            <img class="mockup-base" id="mockup-base" src="" alt="Product mockup" />
+            <img class="mockup-art" id="mockup-art" src="" alt="Your portrait" />
+          </div>
           <div class="mp-loading" id="mp-loading" style="display:none;">
             <div class="spinner"></div>
             Creating your portrait…<br />this takes a few seconds.
@@ -142,7 +145,8 @@
 
     // ---- refs ----
     const overlay  = document.getElementById("overlay");
-    const mpImg    = document.getElementById("mp-img");
+    const mockupBase = document.getElementById("mockup-base");
+    const mockupArt  = document.getElementById("mockup-art");
     const mpLoad   = document.getElementById("mp-loading");
     const colorSelect = document.getElementById("colorSelect");
     const sizeSelect = document.getElementById("sizeSelect");
@@ -188,11 +192,36 @@
       });
     }
 
+    // ── Product mockups (blank canvases). The portrait is layered on top, inside
+    //    the opening. TUNE the opening %s per product until it sits right. ──
+    // NOTE: if your files are in assets/t/product/, change MOCKUP_BASE below.
+    const MOCKUP_BASE = "assets/t/";
+    const MOCKUPS = {
+      "framed-poster": {
+        file: (color) => `frame${(color || "black").toLowerCase()}.png`,
+        opening: { top: "13%", left: "16%", width: "68%", height: "74%" },
+      },
+      "greeting-card": {
+        file: () => "card.png",
+        opening: { top: "10%", left: "12%", width: "76%", height: "62%" },
+      },
+      "poster": {
+        file: () => "poster.png",
+        opening: { top: "6%", left: "8%", width: "84%", height: "88%" },
+      },
+    };
+
+    function setMockup() {
+      const m = MOCKUPS[selectedProduct.product_type] || MOCKUPS["poster"];
+      const color = colorSelect.value || (selectedVariant && selectedVariant.color) || "black";
+      mockupBase.src = MOCKUP_BASE + m.file(color);
+      Object.assign(mockupArt.style, m.opening);   // position the portrait in the opening
+    }
+
     function openModal(product, img) {
       selectedProduct = product;
       selectedImg = img;
       resetModal();
-      mpImg.src = img;
       mTitle.textContent = product.title || "Custom Pet Portrait";
       mSub.textContent = "Printed & shipped";
 
@@ -207,6 +236,7 @@
       colorSelect.innerHTML = colors.map(c => `<option value="${c}">${c}</option>`).join("");
 
       populateSizes(colors[0]);
+      setMockup();
       overlay.classList.add("open");
     }
 
@@ -223,7 +253,7 @@
       selectedVariant = parsedVariants.find(v => v.id === id) || null;
     }
 
-    colorSelect.addEventListener("change", () => populateSizes(colorSelect.value));
+    colorSelect.addEventListener("change", () => { populateSizes(colorSelect.value); setMockup(); });
     sizeSelect.addEventListener("change", resolveVariant);
 
     function resetModal() {
@@ -233,6 +263,7 @@
       msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
       genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
       postgen.style.display = "none"; mpLoad.style.display = "none";
+      mockupArt.style.display = "none"; mockupArt.src = "";
     }
 
     function closeModal() { overlay.classList.remove("open"); }
@@ -253,7 +284,7 @@
       drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
-      if (selectedImg) mpImg.src = selectedImg;
+      mockupArt.style.display = "none";
       showRemaining(file);
     }
 
@@ -291,7 +322,8 @@
         if (error) throw error;
 
         previewUrl = data.previewUrl;
-        mpImg.src = previewUrl;
+        mockupArt.src = previewUrl;
+        mockupArt.style.display = "block";
 
         const count = bump(selectedFile);
         const left = LIMIT - count;
