@@ -385,8 +385,11 @@ a { color: inherit; }
 /* =========================================================================
    PET PRODUCT STRIP + MODAL WORKFLOW (pet.html)
    ========================================================================= */
-.strip-head { text-align: center; padding: 40px 28px 22px; }
-.strip-head h2 { font-size: 28px; letter-spacing: -.01em; margin-bottom: 6px; }
+.strip-head { text-align: center; padding: 48px 28px 26px; }
+.strip-head h2 {
+  font-family: "Quicksand", "Inter", sans-serif;
+  font-size: 32px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 6px;
+}
 .strip-head p { color: var(--ink-soft); font-size: 15px; }
 
 /* full-width row of product images */
@@ -505,6 +508,19 @@ a { color: inherit; }
 
 /* product rows (pet.html) */
 .product-row { margin-bottom: 46px; }
-.row-title { font-size: 20px; font-weight: 700; letter-spacing: -.01em; padding: 0 28px 14px; }
+.row-title {
+  font-family: "Quicksand", "Inter", sans-serif;
+  font-size: 22px; font-weight: 600; letter-spacing: -.01em; padding: 0 40px 16px;
+}
 .size-opt .price { color: var(--ink-soft); font-weight: 500; }
 .size-opt[aria-checked="true"] .price { color: var(--accent); }
+
+/* dropdown selects in the product modal */
+.modal-form .select {
+  width: 100%; font: inherit; font-size: 15px; padding: 12px 40px 12px 14px;
+  border: 1px solid var(--line); border-radius: 10px; background-color: #fff; color: var(--ink);
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236e6e6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.modal-form .select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
