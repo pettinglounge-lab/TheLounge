@@ -524,3 +524,10 @@ a { color: inherit; }
   background-repeat: no-repeat; background-position: right 14px center;
 }
 .modal-form .select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+
+/* keep long, unbreakable filenames from blowing out the upload box / modal */
+.modal-form .drop #fname {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.modal-form { min-width: 0; overflow-wrap: anywhere; }
+.modal-grid { min-width: 0; }
