@@ -531,3 +531,10 @@ a { color: inherit; }
 }
 .modal-form { min-width: 0; overflow-wrap: anywhere; }
 .modal-grid { min-width: 0; }
+
+/* product mockup with the portrait composited on top of the blank canvas */
+.mockup-stage { position: relative; width: 100%; }
+.mockup-stage .mockup-base { width: 100%; display: block; border-radius: 4px; }
+.mockup-stage .mockup-art {
+  position: absolute; object-fit: cover; display: none;
+}
