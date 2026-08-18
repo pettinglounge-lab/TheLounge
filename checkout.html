@@ -58,6 +58,7 @@
             <p class="sub">Printed &amp; shipped</p>
 
             <div class="row"><span class="label">Size</span><span class="value">${escapeHtml(order.size || "—")}</span></div>
+            ${order.frameColor ? `<div class="row"><span class="label">Frame color</span><span class="value">${escapeHtml(order.frameColor)}</span></div>` : ""}
             <div class="row"><span class="label">Pet's name</span><span class="value">${order.petName ? escapeHtml(order.petName) : "—"}</span></div>
             <div class="row"><span class="label">Shipping</span><span class="value">Free</span></div>
             <div class="row total"><span>Total</span><span>$${price}</span></div>
