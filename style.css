@@ -122,10 +122,16 @@ a { color: inherit; }
 }
 .nav .account a:hover { border-color: var(--brown); }
 
-@media (max-width: 600px) {
-  .nav { padding: 14px 18px; }
-  .nav .center { gap: 10px; }
-  .nav .center > a, .nav .drop-toggle { font-size: 14px; padding: 8px 14px; }
+@media (max-width: 700px) {
+  .nav {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "brand account" "center center";
+    row-gap: 12px; padding: 12px 16px;
+  }
+  .nav .brand   { grid-area: brand; }
+  .nav .account { grid-area: account; justify-self: end; }
+  .nav .center  { grid-area: center; justify-self: center; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .nav .center > a, .nav .drop-toggle { font-size: 14px; padding: 7px 12px; }
 }
 
 /* =========================================================================
@@ -458,7 +464,10 @@ a { color: inherit; }
 .modal-form .btn { width: 100%; margin-top: 22px; }
 .modal-form .msg { margin-top: 14px; font-size: 14px; }
 
-@media (max-width: 640px) { .modal-grid { grid-template-columns: 1fr; } .modal-preview { display: none; } }
+@media (max-width: 640px) {
+  .modal-grid { grid-template-columns: 1fr; }
+  .modal-preview { display: flex; max-height: 46vh; }
+}
 
 /* =========================================================================
    CHECKOUT (checkout.html)
