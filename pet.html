@@ -88,6 +88,9 @@
           <label class="field-label">Size</label>
           <select id="sizeSelect" class="select"></select>
 
+          <label class="field-label">Style</label>
+          <select id="styleSelect" class="select"></select>
+
           <label class="field-label">Upload your pet's photo</label>
           <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a photo">
             <div><strong>Upload a photo</strong> or click to browse</div>
@@ -115,6 +118,8 @@
     import { supabase } from "./supabaseClient.js";
 
     const LIMIT = 3; // previews per photo per day
+    const STYLE_OPTIONS = ["Pet White Background", "Royal Renaissance", "Floral"];
+    let selectedStyle = STYLE_OPTIONS[0];
 
     // Product rows: label + which asset images to show. Sizes/prices come from Printify.
     const ROWS = [
@@ -151,6 +156,8 @@
     const colorSelect = document.getElementById("colorSelect");
     const sizeSelect = document.getElementById("sizeSelect");
     const colorLabel = document.getElementById("colorLabel");
+    const styleSelect = document.getElementById("styleSelect");
+    styleSelect.innerHTML = STYLE_OPTIONS.map(s => `<option value="${s}">${s}</option>`).join("");
     const drop     = document.getElementById("drop");
     const fileIn   = document.getElementById("file");
     const fname    = document.getElementById("fname");
@@ -255,6 +262,7 @@
 
     colorSelect.addEventListener("change", () => { populateSizes(colorSelect.value); setMockup(); });
     sizeSelect.addEventListener("change", resolveVariant);
+    styleSelect.addEventListener("change", () => { selectedStyle = styleSelect.value; });
 
     function resetModal() {
       selectedFile = null; scaledDataUrl = null; previewUrl = null;
@@ -316,6 +324,7 @@
         const fd = new FormData();
         fd.append("image", blob, "photo.jpg");
         fd.append("productType", "pet");
+        fd.append("style", selectedStyle);
         fd.append("note", "");   // name is NOT baked into the image — it's overlaid on the frame later
 
         const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
