@@ -525,14 +525,14 @@ a { color: inherit; }
 .size-opt[aria-checked="true"] .price { color: var(--accent); }
 
 /* dropdown selects in the product modal */
-.modal-form .select {
+.select {
   width: 100%; font: inherit; font-size: 15px; padding: 12px 40px 12px 14px;
   border: 1px solid var(--line); border-radius: 10px; background-color: #fff; color: var(--ink);
   appearance: none; -webkit-appearance: none; cursor: pointer;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236e6e6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
   background-repeat: no-repeat; background-position: right 14px center;
 }
-.modal-form .select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 
 /* keep long, unbreakable filenames from blowing out the upload box / modal */
 .modal-form .drop #fname {
