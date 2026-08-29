@@ -21,6 +21,20 @@
     <section class="panel create-box">
       <h2>Create a new portrait</h2>
 
+      <label class="field-label">Category</label>
+      <select id="catSelect" class="select">
+        <option value="pet">Pet</option>
+        <option value="home">Home</option>
+        <option value="memory">Memory</option>
+      </select>
+
+      <label class="field-label">Product</label>
+      <select id="prodSelect" class="select"></select>
+
+      <label class="field-label">Style</label>
+      <select id="styleSelect" class="select"></select>
+
+      <label class="field-label">Photo</label>
       <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a photo">
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
           <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
@@ -64,7 +78,36 @@
     const note      = document.getElementById("note");
     const createBtn = document.getElementById("create");
     const msg       = document.getElementById("msg");
+    const catSelect   = document.getElementById("catSelect");
+    const prodSelect  = document.getElementById("prodSelect");
+    const styleSelect = document.getElementById("styleSelect");
     let selectedFile = null;
+
+    // Styles offered per category (keep in sync with the preview-portrait function).
+    const STYLES_BY_CATEGORY = {
+      pet:    ["White Background", "Royal Renaissance", "Floral", "Princess"],
+      home:   ["Original", "Winter"],
+      memory: ["Memory White Background"],
+    };
+
+    // Products come live from the catalog table.
+    let allProducts = [];
+    async function loadCatalog() {
+      const { data } = await supabase.from("products").select("*");
+      allProducts = data || [];
+      refreshCategory();
+    }
+    function refreshCategory() {
+      const cat = catSelect.value;
+      const prods = allProducts.filter(p => p.category === cat && p.available);
+      prodSelect.innerHTML = prods.length
+        ? prods.map(p => `<option value="${p.printify_product_id}">${escapeHtml(p.title || p.product_type)}</option>`).join("")
+        : `<option value="">None available yet</option>`;
+      const styles = STYLES_BY_CATEGORY[cat] || [];
+      styleSelect.innerHTML = styles.map(s => `<option value="${s}">${escapeHtml(s)}</option>`).join("");
+    }
+    catSelect.addEventListener("change", refreshCategory);
+    loadCatalog();
 
     // ---- pick / drop a file ----
     drop.addEventListener("click", () => fileIn.click());
@@ -95,10 +138,18 @@
           .upload(photoPath, selectedFile, { contentType: selectedFile.type });
         if (up.error) throw up.error;
 
+        const selProd = allProducts.find(p => p.printify_product_id === prodSelect.value);
         const ins = await supabase.from("portraits").insert({
           user_id: session.user.id,
           photo_path: photoPath,
-          config: { note: note.value.trim() || null },
+          config: {
+            note: note.value.trim() || null,
+            category: catSelect.value,
+            productType: catSelect.value,
+            printify_product_id: prodSelect.value || null,
+            product_title: selProd ? selProd.title : null,
+            style: styleSelect.value || null,
+          },
           status: "draft",
         });
         if (ins.error) throw ins.error;
