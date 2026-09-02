@@ -4,10 +4,10 @@
 //     <script type="module" src="Navbar.js"></script>
 // Styling lives in style.css (the .nav classes).
 //
-// Layout:  Petting Lounge | Create ▾ · Gallery · My Projects | account
+// Layout:  Petting Lounge | Create ▾ · Gallery · Custom | account
 //   - "Create" ▾ -> Pet (index.html), Home (home.html), Memory (memories.html)
 //   - "Gallery"  -> gallery.html
-//   - "My Projects" -> projects.html
+//   - "Custom"   -> projects.html
 //   - right link -> "Account" (account.html) if signed in, else "Sign up" (signup.html)
 //
 // Highlight the current page with <site-nav active="..."> using one of:
@@ -54,7 +54,7 @@ class SiteNav extends HTMLElement {
           </div>
 
           <a href="gallery.html"  class="${on("gallery")}">Gallery</a>
-          <a href="projects.html" class="${on("projects")}">My Projects</a>
+          <a href="projects.html" class="${on("projects")}">Custom</a>
         </nav>
 
         <div class="account">
