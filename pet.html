@@ -18,9 +18,9 @@
   <section class="container hero">
     <div>
       <h1>Your pet,<br />beautifully drawn.</h1>
-      <p class="lead">Pick a product, upload one photo, and see your portrait right away — printed and shipped to your door.</p>
+      <p class="lead">Choose a style, upload one photo, and see your portrait right away. Pick your product and size at checkout.</p>
       <div class="cta-row">
-        <a href="#choose" class="btn btn-primary">Choose a product</a>
+        <a href="#create" class="btn btn-primary">Create your portrait</a>
         <a href="gallery.html" class="btn btn-outline">See examples</a>
       </div>
       <p class="reassure">Free shipping · Ships in 3–5 days · Loved by 10,000+ pet owners</p>
@@ -42,12 +42,53 @@
     </div>
   </section>
 
-  <!-- PRODUCT ROWS -->
-  <div id="choose" class="strip-head">
-    <h2>Choose your product</h2>
-    <p>Pick a product and a style to get started.</p>
+  <!-- CREATE -->
+  <div id="create" class="strip-head">
+    <h2>Create your portrait</h2>
+    <p>Choose a style and upload one photo — pick your product, frame, and size next at checkout.</p>
   </div>
-  <div id="rows"><div class="empty" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading products…</div></div>
+
+  <div class="creator-card">
+    <div class="modal-grid">
+      <div class="modal-preview" id="mp-panel">
+        <div class="preview-placeholder" id="placeholder">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+          <div>Your portrait will appear here</div>
+        </div>
+        <img id="previewImg" src="" alt="Your portrait" style="display:none; max-width:100%; border-radius:8px;" />
+        <div class="mp-loading" id="mp-loading" style="display:none;">
+          <div class="spinner"></div>
+          Creating your portrait…<br />this takes a few seconds.
+        </div>
+      </div>
+      <div class="modal-form">
+        <h2>Custom Pet Portrait</h2>
+        <p class="modal-sub">Choose a style and upload a photo to begin</p>
+
+        <label class="field-label">Style</label>
+        <select id="styleSelect" class="select"></select>
+
+        <label class="field-label">Upload your pet's photo</label>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a photo">
+          <div><strong>Upload a photo</strong> or click to browse</div>
+          <div id="fname" style="margin-top:6px;"></div>
+        </div>
+        <input type="file" id="file" accept="image/*" hidden />
+        <p class="upload-tip"><strong>Tip:</strong> photos in bright, direct light work best — avoid strong shadows.</p>
+
+        <label class="field-label">Pet's name (optional)</label>
+        <input type="text" id="petName" maxlength="30" placeholder="e.g. Biscuit" />
+
+        <button class="btn btn-primary" id="generate">Generate preview</button>
+        <div id="postgen" style="display:none;">
+          <a class="btn btn-primary" id="continue" style="width:100%; text-align:center;">Continue to checkout</a>
+          <button class="btn btn-outline btn-sm" id="regen" style="width:100%; margin-top:8px;">Regenerate</button>
+        </div>
+        <p class="msg" id="msg"></p>
+        <p class="attempts-note" id="attempts"></p>
+      </div>
+    </div>
+  </div>
 
   <!-- FOOTER -->
   <footer class="footer">
@@ -57,107 +98,27 @@
         <a href="pet.html">Pets</a>
         <a href="home.html">Home</a>
         <a href="memories.html">Memories</a>
-        <a href="projects.html">My Projects</a>
+        <a href="projects.html">Custom</a>
       </nav>
       <span class="muted">© 2026 Petting Lounge</span>
     </div>
   </footer>
 
-  <!-- MODAL -->
-  <div class="modal-overlay" id="overlay">
-    <div class="modal">
-      <button class="modal-close" id="close" aria-label="Close">×</button>
-      <div class="modal-grid">
-        <div class="modal-preview" id="mp-panel">
-          <div class="mockup-stage" id="stage">
-            <img class="mockup-base" id="mockup-base" src="" alt="Product mockup" />
-            <img class="mockup-art" id="mockup-art" src="" alt="Your portrait" />
-          </div>
-          <div class="mp-loading" id="mp-loading" style="display:none;">
-            <div class="spinner"></div>
-            Creating your portrait…<br />this takes a few seconds.
-          </div>
-        </div>
-        <div class="modal-form">
-          <h2 id="modal-title">Custom Pet Portrait</h2>
-          <p class="modal-sub" id="modal-sub">Printed &amp; shipped</p>
-
-          <label class="field-label" id="colorLabel">Frame color</label>
-          <select id="colorSelect" class="select"></select>
-
-          <label class="field-label">Size</label>
-          <select id="sizeSelect" class="select"></select>
-
-          <label class="field-label">Style</label>
-          <select id="styleSelect" class="select"></select>
-
-          <label class="field-label">Upload your pet's photo</label>
-          <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a photo">
-            <div><strong>Upload a photo</strong> or click to browse</div>
-            <div id="fname" style="margin-top:6px;"></div>
-          </div>
-          <input type="file" id="file" accept="image/*" hidden />
-          <p class="upload-tip"><strong>Tip:</strong> photos in bright, direct light work best — avoid strong shadows.</p>
-
-          <label class="field-label">Pet's name (optional)</label>
-          <input type="text" id="petName" maxlength="30" placeholder="e.g. Biscuit" />
-
-          <button class="btn btn-primary" id="generate">Generate preview</button>
-          <div id="postgen" style="display:none;">
-            <a class="btn btn-primary" id="continue" style="width:100%; text-align:center;">Continue to checkout</a>
-            <button class="btn btn-outline btn-sm" id="regen" style="width:100%; margin-top:8px;">Regenerate</button>
-          </div>
-          <p class="msg" id="msg"></p>
-          <p class="attempts-note" id="attempts"></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script type="module">
     import { supabase } from "./supabaseClient.js";
 
     const LIMIT = 3; // previews per photo per day
+    const CATEGORY = "pet";
     const STYLE_OPTIONS = ["White Background", "Royal Renaissance", "Floral", "Princess"];
-    let selectedStyle = STYLE_OPTIONS[0];
-
-    // Product rows: label + which asset images to show. Sizes/prices come from Printify.
-    const ROWS = [
-      { type: "framed-poster", label: "Framed Art",    images: [1,2,3,4,5].map(n => `assets/dogframe${n}.png`) },
-      { type: "greeting-card", label: "Greeting Card", images: [1,2,3,4,5].map(n => `assets/card${n}.png`) },
-      { type: "poster",        label: "Rolled Poster", images: [1,2,3,4,5].map(n => `assets/poster${n}.png`) },
-    ];
-
-    let productsByType = {};   // product_type -> product row from DB
-
-    // ---- load catalog + render rows ----
-    async function init() {
-      const { data } = await supabase.from("products").select("*").eq("category", "pet");
-      (data || []).forEach(p => { productsByType[p.product_type] = p; });
-
-      document.getElementById("rows").innerHTML = ROWS.map(row => `
-        <section class="product-row">
-          <h3 class="row-title">${row.label}</h3>
-          <div class="product-strip">
-            ${row.images.map((img, i) => `
-              <button class="product-tile" data-type="${row.type}" data-img="${img}">
-                <img src="${img}" alt="${row.label} ${i + 1}" onerror="this.style.opacity=.15" />
-                <span class="pick">Select</span>
-              </button>`).join("")}
-          </div>
-        </section>`).join("");
-    }
 
     // ---- refs ----
-    const overlay  = document.getElementById("overlay");
-    const mockupBase = document.getElementById("mockup-base");
-    const mockupArt  = document.getElementById("mockup-art");
+    const placeholder = document.getElementById("placeholder");
+    const previewImg  = document.getElementById("previewImg");
     const mpLoad   = document.getElementById("mp-loading");
-    const colorSelect = document.getElementById("colorSelect");
-    const sizeSelect = document.getElementById("sizeSelect");
-    const colorLabel = document.getElementById("colorLabel");
     const styleSelect = document.getElementById("styleSelect");
     styleSelect.innerHTML = STYLE_OPTIONS.map(s => `<option value="${s}">${s}</option>`).join("");
+    let selectedStyle = STYLE_OPTIONS[0];
+
     const drop     = document.getElementById("drop");
     const fileIn   = document.getElementById("file");
     const fname    = document.getElementById("fname");
@@ -168,115 +129,12 @@
     const regenBtn = document.getElementById("regen");
     const msg      = document.getElementById("msg");
     const attempts = document.getElementById("attempts");
-    const mTitle   = document.getElementById("modal-title");
-    const mSub     = document.getElementById("modal-sub");
 
-    let selectedProduct = null;
-    let selectedImg = null;
-    let selectedVariant = null;
     let selectedFile = null;
     let scaledDataUrl = null;
     let previewUrl = null;
 
-    // ---- open modal ----
-    document.getElementById("rows").addEventListener("click", (e) => {
-      const tile = e.target.closest(".product-tile"); if (!tile) return;
-      const product = productsByType[tile.dataset.type];
-      if (!product || !product.available || !(product.variants || []).length) {
-        alert("This product is currently unavailable. Please try another."); return;
-      }
-      openModal(product, tile.dataset.img);
-    });
-
-    const COLOR_ORDER = ["Natural", "White", "Espresso", "Black"];
-    let parsedVariants = [];
-
-    // Split "30\" x 40\" (Vertical) / Natural / 1.25\"" into { sizeLabel, color }.
-    function parseVariants(variants) {
-      return variants.map(v => {
-        const parts = String(v.size).split(" / ").map(s => s.trim());
-        return { id: v.id, price: v.price, sizeLabel: parts[0] || v.size, color: parts[1] || "One color" };
-      });
-    }
-
-    // ── Product mockups (blank canvases). The portrait is layered on top, inside
-    //    the opening. TUNE the opening %s per product until it sits right. ──
-    // NOTE: if your files are in assets/t/product/, change MOCKUP_BASE below.
-    const MOCKUP_BASE = "assets/t/";
-    const MOCKUPS = {
-      "framed-poster": {
-        file: (color) => `frame${(color || "black").toLowerCase()}.png`,
-        opening: { top: "11%", left: "20%", width: "60%", height: "78%" },   // dialed in for the flat frame
-      },
-      "greeting-card": {
-        file: () => "card.png",
-        opening: { top: "15%", left: "26%", width: "48%", height: "70%" },   // front panel of the card
-      },
-      "poster": {
-        file: () => "poster.png",
-        opening: { top: "17%", left: "30%", width: "40%", height: "68%" },   // centered vertical print on the landscape poster
-      },
-    };
-
-    function setMockup() {
-      const m = MOCKUPS[selectedProduct.product_type] || MOCKUPS["poster"];
-      const color = colorSelect.value || (selectedVariant && selectedVariant.color) || "black";
-      mockupBase.src = MOCKUP_BASE + m.file(color);
-      Object.assign(mockupArt.style, m.opening);   // position the portrait in the opening
-    }
-
-    function openModal(product, img) {
-      selectedProduct = product;
-      selectedImg = img;
-      resetModal();
-      mTitle.textContent = product.title || "Custom Pet Portrait";
-      mSub.textContent = "Printed & shipped";
-
-      parsedVariants = parseVariants(product.variants);
-
-      // frame colors present, in preferred order
-      const colors = [...new Set(parsedVariants.map(v => v.color))];
-      colors.sort((a, b) => ((COLOR_ORDER.indexOf(a) + 1 || 99) - (COLOR_ORDER.indexOf(b) + 1 || 99)));
-      const multiColor = colors.length > 1;
-      colorSelect.style.display = multiColor ? "block" : "none";
-      colorLabel.style.display = multiColor ? "block" : "none";
-      colorSelect.innerHTML = colors.map(c => `<option value="${c}">${c}</option>`).join("");
-
-      populateSizes(colors[0]);
-      setMockup();
-      overlay.classList.add("open");
-    }
-
-    // Sizes available for the chosen color.
-    function populateSizes(color) {
-      const sizes = parsedVariants.filter(v => v.color === color);
-      sizeSelect.innerHTML = sizes.map(v =>
-        `<option value="${v.id}">${v.sizeLabel} · $${v.price}</option>`).join("");
-      resolveVariant();
-    }
-
-    function resolveVariant() {
-      const id = Number(sizeSelect.value);
-      selectedVariant = parsedVariants.find(v => v.id === id) || null;
-    }
-
-    colorSelect.addEventListener("change", () => { populateSizes(colorSelect.value); setMockup(); });
-    sizeSelect.addEventListener("change", resolveVariant);
     styleSelect.addEventListener("change", () => { selectedStyle = styleSelect.value; });
-
-    function resetModal() {
-      selectedFile = null; scaledDataUrl = null; previewUrl = null;
-      fileIn.value = ""; petName.value = "";
-      drop.classList.remove("has-file"); fname.textContent = "";
-      msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
-      genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
-      postgen.style.display = "none"; mpLoad.style.display = "none";
-      mockupArt.style.display = "none"; mockupArt.src = "";
-    }
-
-    function closeModal() { overlay.classList.remove("open"); }
-    document.getElementById("close").addEventListener("click", closeModal);
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
 
     // ---- file pick ----
     drop.addEventListener("click", () => fileIn.click());
@@ -292,7 +150,7 @@
       drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
-      mockupArt.style.display = "none";
+      previewImg.style.display = "none"; placeholder.style.display = "block";
       showRemaining(file);
     }
 
@@ -323,16 +181,17 @@
         const blob = dataURLtoBlob(scaledDataUrl);
         const fd = new FormData();
         fd.append("image", blob, "photo.jpg");
-        fd.append("productType", "pet");
+        fd.append("productType", CATEGORY);
         fd.append("style", selectedStyle);
-        fd.append("note", "");   // name is NOT baked into the image — it's overlaid on the frame later
+        fd.append("note", "");   // name is NOT baked into the image — added at fulfillment/frame later
 
         const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
         if (error) throw error;
 
         previewUrl = data.previewUrl;
-        mockupArt.src = previewUrl;
-        mockupArt.style.display = "block";
+        previewImg.src = previewUrl;
+        previewImg.style.display = "block";
+        placeholder.style.display = "none";
 
         const count = bump(selectedFile);
         const left = LIMIT - count;
@@ -353,20 +212,11 @@
       genBtn.disabled = on; regenBtn.disabled = on; continueBtn.style.pointerEvents = on ? "none" : "auto";
     }
 
-    // ---- continue to checkout (carries the exact preview + Printify IDs) ----
+    // ---- continue to checkout (product/frame/size are chosen THERE, not here) ----
     continueBtn.addEventListener("click", () => {
       const order = {
-        productType: "pet",
-        product_type: selectedProduct.product_type,
-        printify_product_id: selectedProduct.printify_product_id,
-        blueprint_id: selectedProduct.blueprint_id,
-        print_provider_id: selectedProduct.print_provider_id,
-        title: selectedProduct.title,
-        productImg: selectedImg,
-        variantId: selectedVariant.id,
-        size: selectedVariant.sizeLabel,
-        frameColor: selectedVariant.color,
-        price: selectedVariant.price,
+        category: CATEGORY,
+        style: selectedStyle,
         petName: petName.value.trim() || null,
       };
       sessionStorage.setItem("ptl_order", JSON.stringify(order));
@@ -401,8 +251,6 @@
       for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
       return new Blob([arr], { type: mime });
     }
-
-    init();
   </script>
 
   <script type="module" src="Navbar.js"></script>
