@@ -481,6 +481,8 @@ a { color: inherit; }
   padding: 24px; min-height: 380px; display: flex; align-items: center; justify-content: center;
 }
 .preview-panel img { max-width: 100%; border-radius: 8px; box-shadow: var(--shadow); }
+.preview-panel .mockup-stage img { box-shadow: none; }
+.preview-panel .mockup-base { border-radius: 8px; box-shadow: var(--shadow); }
 .preview-loading { text-align: center; color: var(--ink-soft); font-size: 14px; }
 .spinner {
   width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--accent);
@@ -524,7 +526,19 @@ a { color: inherit; }
 .size-opt .price { color: var(--ink-soft); font-weight: 500; }
 .size-opt[aria-checked="true"] .price { color: var(--accent); }
 
-/* dropdown selects in the product modal */
+/* inline "create your portrait" card (same look as the old modal, not a popup) */
+.creator-card {
+  max-width: 900px; margin: 0 auto 64px; background: #fff; border: 1px solid var(--line);
+  border-radius: 16px; box-shadow: var(--shadow); overflow: hidden;
+}
+.creator-card .modal-grid { min-width: 0; }
+.preview-placeholder { text-align: center; color: var(--ink-soft); font-size: 14px; padding: 20px; }
+.preview-placeholder svg { opacity: .35; margin-bottom: 10px; }
+
+/* product/frame/size picker on checkout */
+.checkout-options .field-label:first-child { margin-top: 4px; }
+.checkout-options .select { margin-bottom: 4px; }
+.checkout-note { font-size: 13px; color: var(--ink-soft); background: var(--wash); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 4px; }
 .select {
   width: 100%; font: inherit; font-size: 15px; padding: 12px 40px 12px 14px;
   border: 1px solid var(--line); border-radius: 10px; background-color: #fff; color: var(--ink);
