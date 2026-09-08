@@ -4,7 +4,7 @@
    it updates everywhere. Colors live in :root as easy-to-read variables.
    ========================================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   --bg:        #ffffff;   /* page background */
@@ -66,11 +66,11 @@ a { color: inherit; }
 }
 .nav a { text-decoration: none; }
 
-/* logo, top-left — softer rounded typeface */
+/* Brand: a clean editorial text wordmark. */
 .nav .brand {
-  justify-self: start;
-  font-family: "Quicksand", "Inter", sans-serif;
-  font-weight: 700; font-size: 21px; letter-spacing: .01em; color: var(--ink);
+  justify-self: start; color: var(--ink); line-height: 1;
+  font-family: "DM Serif Display", Georgia, serif;
+  font-size: 24px; letter-spacing: -.04em;
 }
 
 /* center cluster */
@@ -129,6 +129,7 @@ a { color: inherit; }
     row-gap: 12px; padding: 12px 16px;
   }
   .nav .brand   { grid-area: brand; }
+  .nav .brand { font-size: 22px; }
   .nav .account { grid-area: account; justify-self: end; }
   .nav .center  { grid-area: center; justify-self: center; flex-wrap: wrap; justify-content: center; gap: 8px; }
   .nav .center > a, .nav .drop-toggle { font-size: 14px; padding: 7px 12px; }
@@ -183,7 +184,7 @@ a { color: inherit; }
    ========================================================================= */
 .footer { padding: 44px 0; }
 .footer .container { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
-.footer .brand { font-weight: 700; }
+.footer .brand { color: var(--ink); font-family: "DM Serif Display", Georgia, serif; font-size: 22px; letter-spacing: -.04em; text-decoration: none; }
 .footer .muted { color: var(--ink-soft); font-size: 14px; }
 .footer a { color: var(--ink-soft); text-decoration: none; font-size: 14px; margin-left: 20px; }
 .footer a:hover { color: var(--ink); }
@@ -244,6 +245,21 @@ a { color: inherit; }
 .auth-card .switch { margin-top: 20px; text-align: center; font-size: 14px; color: var(--ink-soft); }
 .auth-card .switch a { color: var(--ink); font-weight: 600; text-decoration: none; }
 .auth-card .switch a:hover { text-decoration: underline; }
+.terms-check { display: flex !important; align-items: flex-start; gap: 9px; margin: 2px 0 18px; color: var(--ink-soft); font-size: 13px !important; font-weight: 400 !important; line-height: 1.45; }
+.terms-check input { width: 16px; height: 16px; flex: 0 0 auto; margin: 2px 0 0; accent-color: var(--accent); }
+.terms-check a { color: var(--ink); font-weight: 600; }
+
+/* =========================================================================
+   TERMS OF SERVICE
+   ========================================================================= */
+.legal-page { max-width: 760px; margin: 0 auto; padding: 72px 28px 88px; }
+.legal-page .eyebrow { color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; }
+.legal-page h1 { margin: 8px 0 8px; font-size: 42px; letter-spacing: -.03em; }
+.legal-updated { color: var(--ink-soft); font-size: 14px; margin-bottom: 42px; }
+.legal-page section { padding: 22px 0; border-top: 1px solid var(--line); }
+.legal-page h2 { font-size: 19px; margin-bottom: 9px; }
+.legal-page p { color: var(--ink-soft); margin-top: 10px; }
+.legal-page a { color: var(--ink); font-weight: 600; }
 
 /* =========================================================================
    ACCOUNT  (account.html)

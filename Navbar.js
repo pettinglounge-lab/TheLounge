@@ -39,7 +39,7 @@ class SiteNav extends HTMLElement {
 
     this.innerHTML = `
       <header class="nav">
-        <a class="brand" href="index.html">Petting Lounge</a>
+        <a class="brand" href="index.html" aria-label="Petting Lounge home">Petting Lounge</a>
 
         <nav class="center">
           <div class="dropdown">

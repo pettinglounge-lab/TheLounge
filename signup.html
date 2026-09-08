@@ -29,7 +29,12 @@
           <label for="password">Password</label>
           <input type="password" id="password" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password" />
 
-          <button type="submit" class="btn btn-primary" id="submit-btn">Sign up</button>
+          <label class="terms-check" for="terms">
+            <input type="checkbox" id="terms" required />
+            <span>I agree to the <a href="terms.html">Terms of Service</a>.</span>
+          </label>
+
+          <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Sign up</button>
         </form>
 
         <p class="msg" id="message"></p>
@@ -56,8 +61,11 @@
     const form    = document.getElementById("auth-form");
     const emailIn = document.getElementById("email");
     const passIn  = document.getElementById("password");
+    const termsIn = document.getElementById("terms");
     const btn     = document.getElementById("submit-btn");
     const message = document.getElementById("message");
+
+    termsIn.addEventListener("change", () => { btn.disabled = !termsIn.checked; });
 
     async function checkExisting() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -72,12 +80,16 @@
       e.preventDefault();
       const email = emailIn.value.trim();
       const password = passIn.value;
-      if (!email || !password) return;
+      if (!email || !password || !termsIn.checked) return;
 
       btn.disabled = true; btn.textContent = "Creating account…";
       message.textContent = ""; message.className = "msg";
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { terms_accepted_at: new Date().toISOString(), terms_version: "2026-09-08" } },
+      });
 
       if (error) {
         message.textContent = error.message;
