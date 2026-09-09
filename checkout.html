@@ -138,7 +138,7 @@
           : type === "greeting-card"
             ? { file: "card.png", opening: "top:15%;left:26%;width:48%;height:70%;" }
             : { file: "poster.png", opening: "top:17%;left:30%;width:40%;height:68%;" };
-        panel.innerHTML = `<div class="mockup-stage checkout-mockup"><img class="mockup-base" src="assets/t/${config.file}" alt="Product mockup" /><img class="mockup-art" style="${config.opening}" src="${escapeHtml(presetPreview)}" alt="Your generated portrait" /></div>`;
+        panel.innerHTML = `<div class="mockup-stage checkout-mockup"><img class="mockup-base" src="assets/t/${config.file}" alt="Product mockup" /><img class="mockup-art" style="${config.opening}display:block;" src="${escapeHtml(presetPreview)}" alt="Your generated portrait" /></div>`;
         return;
       }
       panel.innerHTML = `<div class="preview-loading">No preview found — please start again from the product page.</div>`;
