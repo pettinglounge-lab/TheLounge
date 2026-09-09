@@ -83,12 +83,6 @@
           <h2 id="modal-title">Custom Home Portrait</h2>
           <p class="modal-sub" id="modal-sub">Printed &amp; shipped</p>
 
-          <label class="field-label" id="colorLabel">Frame color</label>
-          <select id="colorSelect" class="select"></select>
-
-          <label class="field-label">Size</label>
-          <select id="sizeSelect" class="select"></select>
-
           <label class="field-label">Style</label>
           <select id="styleSelect" class="select"></select>
 
@@ -99,9 +93,6 @@
           </div>
           <input type="file" id="file" accept="image/*" hidden />
           <p class="upload-tip"><strong>Tip:</strong> photos in bright, direct light work best — avoid strong shadows.</p>
-
-          <label class="field-label">Home name or address (optional)</label>
-          <input type="text" id="petName" maxlength="30" placeholder="e.g. The Smith Home" />
 
           <button class="btn btn-primary" id="generate">Generate preview</button>
           <div id="postgen" style="display:none;">
@@ -122,7 +113,7 @@
     const STYLE_OPTIONS = ["Original", "Winter"];
     let selectedStyle = STYLE_OPTIONS[0];
 
-    // Product rows: label + which asset images to show. Sizes/prices come from Printify.
+    // Fixed gallery placeholders remain visible as new Home examples are added.
     const ROWS = [
       { type: "framed-poster", label: "Framed Art",    images: [1,2,3,4,5].map(n => `assets/homeframe${n}.png`) },
       { type: "greeting-card", label: "Greeting Card", images: [1,2,3,4,5].map(n => `assets/homecard${n}.png`) },
@@ -133,7 +124,12 @@
 
     // ---- load catalog + render rows ----
     async function init() {
-      const { data } = await supabase.from("products").select("*").eq("category", "home");
+      let { data } = await supabase.from("products").select("*").eq("category", "home");
+      // Until the Home catalog rows have completed their first sync, use the
+      // matching Pet products only to keep the Home creation flow usable.
+      if (!data || data.length === 0) {
+        ({ data } = await supabase.from("products").select("*").eq("category", "pet"));
+      }
       (data || []).forEach(p => { productsByType[p.product_type] = p; });
 
       document.getElementById("rows").innerHTML = ROWS.map(row => `
@@ -154,15 +150,11 @@
     const mockupBase = document.getElementById("mockup-base");
     const mockupArt  = document.getElementById("mockup-art");
     const mpLoad   = document.getElementById("mp-loading");
-    const colorSelect = document.getElementById("colorSelect");
-    const sizeSelect = document.getElementById("sizeSelect");
-    const colorLabel = document.getElementById("colorLabel");
     const styleSelect = document.getElementById("styleSelect");
     styleSelect.innerHTML = STYLE_OPTIONS.map(s => `<option value="${s}">${s}</option>`).join("");
     const drop     = document.getElementById("drop");
     const fileIn   = document.getElementById("file");
     const fname    = document.getElementById("fname");
-    const petName  = document.getElementById("petName");
     const genBtn   = document.getElementById("generate");
     const postgen  = document.getElementById("postgen");
     const continueBtn = document.getElementById("continue");
@@ -174,7 +166,6 @@
 
     let selectedProduct = null;
     let selectedImg = null;
-    let selectedVariant = null;
     let selectedFile = null;
     let scaledDataUrl = null;
     let previewUrl = null;
@@ -188,17 +179,6 @@
       }
       openModal(product, tile.dataset.img);
     });
-
-    const COLOR_ORDER = ["Natural", "White", "Espresso", "Black"];
-    let parsedVariants = [];
-
-    // Split "30\" x 40\" (Vertical) / Natural / 1.25\"" into { sizeLabel, color }.
-    function parseVariants(variants) {
-      return variants.map(v => {
-        const parts = String(v.size).split(" / ").map(s => s.trim());
-        return { id: v.id, price: v.price, sizeLabel: parts[0] || v.size, color: parts[1] || "One color" };
-      });
-    }
 
     // ── Product mockups (blank canvases). The portrait is layered on top, inside
     //    the opening. TUNE the opening %s per product until it sits right. ──
@@ -221,8 +201,7 @@
 
     function setMockup() {
       const m = MOCKUPS[selectedProduct.product_type] || MOCKUPS["poster"];
-      const color = colorSelect.value || (selectedVariant && selectedVariant.color) || "black";
-      mockupBase.src = MOCKUP_BASE + m.file(color);
+      mockupBase.src = MOCKUP_BASE + m.file("black");
       Object.assign(mockupArt.style, m.opening);   // position the portrait in the opening
     }
 
@@ -233,46 +212,19 @@
       mTitle.textContent = product.title || "Custom Home Portrait";
       mSub.textContent = "Printed & shipped";
 
-      parsedVariants = parseVariants(product.variants);
-
-      // frame colors present, in preferred order
-      const colors = [...new Set(parsedVariants.map(v => v.color))];
-      colors.sort((a, b) => ((COLOR_ORDER.indexOf(a) + 1 || 99) - (COLOR_ORDER.indexOf(b) + 1 || 99)));
-      const multiColor = colors.length > 1;
-      colorSelect.style.display = multiColor ? "block" : "none";
-      colorLabel.style.display = multiColor ? "block" : "none";
-      colorSelect.innerHTML = colors.map(c => `<option value="${c}">${c}</option>`).join("");
-
-      populateSizes(colors[0]);
       setMockup();
       overlay.classList.add("open");
     }
-
-    // Sizes available for the chosen color.
-    function populateSizes(color) {
-      const sizes = parsedVariants.filter(v => v.color === color);
-      sizeSelect.innerHTML = sizes.map(v =>
-        `<option value="${v.id}">${v.sizeLabel} · $${v.price}</option>`).join("");
-      resolveVariant();
-    }
-
-    function resolveVariant() {
-      const id = Number(sizeSelect.value);
-      selectedVariant = parsedVariants.find(v => v.id === id) || null;
-    }
-
-    colorSelect.addEventListener("change", () => { populateSizes(colorSelect.value); setMockup(); });
-    sizeSelect.addEventListener("change", resolveVariant);
     styleSelect.addEventListener("change", () => { selectedStyle = styleSelect.value; });
 
     function resetModal() {
       selectedFile = null; scaledDataUrl = null; previewUrl = null;
-      fileIn.value = ""; petName.value = "";
+      fileIn.value = "";
       drop.classList.remove("has-file"); fname.textContent = "";
       msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
       genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
       postgen.style.display = "none"; mpLoad.style.display = "none";
-      mockupArt.style.display = "none"; mockupArt.src = "";
+      mockupBase.style.display = "none"; mockupArt.style.display = "none"; mockupArt.src = "";
     }
 
     function closeModal() { overlay.classList.remove("open"); }
@@ -293,7 +245,7 @@
       drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
-      mockupArt.style.display = "none";
+      mockupBase.style.display = "none"; mockupArt.style.display = "none";
       showRemaining(file);
     }
 
@@ -332,6 +284,7 @@
         if (error) throw error;
 
         previewUrl = data.previewUrl;
+        mockupBase.style.display = "block";
         mockupArt.src = previewUrl;
         mockupArt.style.display = "block";
 
@@ -354,21 +307,17 @@
       genBtn.disabled = on; regenBtn.disabled = on; continueBtn.style.pointerEvents = on ? "none" : "auto";
     }
 
-    // ---- continue to checkout (carries the exact preview + Printify IDs) ----
+    // ---- continue to checkout; product options are chosen there from Supabase ----
     continueBtn.addEventListener("click", () => {
       const order = {
-        productType: "pet",
+        category: "home",
+        style: selectedStyle,
         product_type: selectedProduct.product_type,
         printify_product_id: selectedProduct.printify_product_id,
         blueprint_id: selectedProduct.blueprint_id,
         print_provider_id: selectedProduct.print_provider_id,
         title: selectedProduct.title,
         productImg: selectedImg,
-        variantId: selectedVariant.id,
-        size: selectedVariant.sizeLabel,
-        frameColor: selectedVariant.color,
-        price: selectedVariant.price,
-        petName: petName.value.trim() || null,
       };
       sessionStorage.setItem("ptl_order", JSON.stringify(order));
       sessionStorage.setItem("ptl_photo", scaledDataUrl);

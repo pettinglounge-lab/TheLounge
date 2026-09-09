@@ -25,13 +25,14 @@
 
     // Read what the pet page stashed in the browser.
     let order = null, photoDataUrl = null, presetPreview = null;
+    let product = null, variants = [], selectedVariant = null;
     try {
       order = JSON.parse(sessionStorage.getItem("ptl_order"));
       photoDataUrl = sessionStorage.getItem("ptl_photo");
       presetPreview = sessionStorage.getItem("ptl_preview");
     } catch (e) { /* ignore */ }
 
-    if (!order || !photoDataUrl) {
+    if (!order || !presetPreview) {
       root.innerHTML = `
         <div class="checkout-empty">
           <h1>Nothing to check out yet</h1>
@@ -43,7 +44,6 @@
     }
 
     function renderCheckout() {
-      const price = order.price ?? 0;
       root.innerHTML = `
         <div class="checkout">
           <div class="preview-panel" id="preview">
@@ -55,13 +55,8 @@
 
           <div class="summary">
             <h1>${escapeHtml(order.title || "Custom Pet Portrait")}</h1>
-            <p class="sub">Printed &amp; shipped</p>
-
-            <div class="row"><span class="label">Size</span><span class="value">${escapeHtml(order.size || "—")}</span></div>
-            ${order.frameColor ? `<div class="row"><span class="label">Frame color</span><span class="value">${escapeHtml(order.frameColor)}</span></div>` : ""}
-            <div class="row"><span class="label">Pet's name</span><span class="value">${order.petName ? escapeHtml(order.petName) : "—"}</span></div>
-            <div class="row"><span class="label">Shipping</span><span class="value">Free</span></div>
-            <div class="row total"><span>Total</span><span>$${price}</span></div>
+            <p class="sub">Choose your product options.</p>
+            <div id="options"><div class="preview-loading"><div class="spinner"></div>Loading options…</div></div>
 
             <button class="btn btn-primary" id="pay" disabled>Proceed to payment</button>
             <div class="stub">Payment isn't connected yet — this is where Stripe checkout will go.</div>
@@ -74,14 +69,76 @@
       });
 
       showPreview();
+      loadOptions();
+    }
+
+    async function loadOptions() {
+      const box = document.getElementById("options");
+      let { data, error } = await supabase.from("products")
+        .select("product_type, variants")
+        .eq("printify_product_id", order.printify_product_id)
+        .eq("category", order.category)
+        .maybeSingle();
+      // Home and Memory temporarily use the Pet catalog before their own
+      // category rows have been synced. Prefer their category whenever present.
+      if ((!data || !(data.variants || []).length) && order.category !== "pet") {
+        ({ data, error } = await supabase.from("products")
+          .select("product_type, variants")
+          .eq("printify_product_id", order.printify_product_id)
+          .eq("category", "pet")
+          .maybeSingle());
+      }
+      if (error || !data || !(data.variants || []).length) {
+        box.innerHTML = `<div class="checkout-note">Product options are unavailable right now. Please return and choose another product.</div>`;
+        return;
+      }
+      product = data;
+      variants = data.variants.map(v => {
+        const parts = String(v.size || "").split(" / ").map(s => s.trim());
+        return { id: v.id, price: Number(v.price), size: parts[0] || "Standard", detail: parts.slice(1).join(" / "), color: parts.find(p => ["Natural", "White", "Espresso", "Black"].includes(p)) || "" };
+      });
+      const colors = [...new Set(variants.map(v => v.color).filter(Boolean))];
+      box.innerHTML = `
+        ${colors.length ? `<label class="field-label" for="color">Frame color</label><select class="select" id="color">${colors.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")}</select>` : ""}
+        <label class="field-label" for="variant">${colors.length ? "Size" : "Product option"}</label><select class="select" id="variant"></select>
+        <label class="field-label" for="quantity">Quantity</label><select class="select" id="quantity">${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join("")}</select>
+        <div class="row total"><span>Total</span><span id="total">—</span></div>`;
+      document.getElementById("color")?.addEventListener("change", () => { populateVariants(); showPreview(); });
+      document.getElementById("variant").addEventListener("change", chooseVariant);
+      document.getElementById("quantity").addEventListener("change", chooseVariant);
+      populateVariants();
+      showPreview();
+      document.getElementById("pay").disabled = false;
+    }
+
+    function populateVariants() {
+      const color = document.getElementById("color")?.value;
+      const matches = color ? variants.filter(v => v.color === color) : variants;
+      document.getElementById("variant").innerHTML = matches.map(v => `<option value="${v.id}">${escapeHtml(v.size)}${v.detail ? ` · ${escapeHtml(v.detail)}` : ""} · $${v.price.toFixed(2)}</option>`).join("");
+      chooseVariant();
+    }
+
+    function chooseVariant() {
+      selectedVariant = variants.find(v => String(v.id) === document.getElementById("variant").value);
+      const quantity = Number(document.getElementById("quantity").value);
+      if (!selectedVariant) return;
+      document.getElementById("total").textContent = `$${(selectedVariant.price * quantity).toFixed(2)}`;
+      Object.assign(order, { variantId: selectedVariant.id, size: selectedVariant.size, frameColor: selectedVariant.color || null, price: selectedVariant.price, quantity });
+      sessionStorage.setItem("ptl_order", JSON.stringify(order));
     }
 
     // Show the preview generated in the popup (carried over — never regenerated here).
     async function showPreview() {
       const panel = document.getElementById("preview");
       if (presetPreview) {
-        panel.innerHTML = `<img src="${presetPreview}" alt="Your portrait preview" />`;
-        document.getElementById("pay").disabled = false;
+        const color = document.getElementById("color")?.value?.toLowerCase() || "black";
+        const type = product?.product_type || order.product_type;
+        const config = type === "framed-poster"
+          ? { file: `frame${color}.png`, opening: "top:11%;left:20%;width:60%;height:78%;" }
+          : type === "greeting-card"
+            ? { file: "card.png", opening: "top:15%;left:26%;width:48%;height:70%;" }
+            : { file: "poster.png", opening: "top:17%;left:30%;width:40%;height:68%;" };
+        panel.innerHTML = `<div class="mockup-stage checkout-mockup"><img class="mockup-base" src="assets/t/${config.file}" alt="Product mockup" /><img class="mockup-art" style="${config.opening}" src="${escapeHtml(presetPreview)}" alt="Your generated portrait" /></div>`;
         return;
       }
       panel.innerHTML = `<div class="preview-loading">No preview found — please start again from the product page.</div>`;

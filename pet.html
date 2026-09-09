@@ -117,7 +117,8 @@
     const CATEGORY = "pet";
     const STYLE_OPTIONS = ["White Background", "Royal Renaissance", "Floral", "Princess"];
 
-    // Product rows: label + which asset images to show. Sizes/prices are resolved later, at checkout.
+    // Curated example imagery for the product gallery. Product availability and
+    // variants still come live from Supabase when a tile is selected.
     const ROWS = [
       { type: "framed-poster", label: "Framed Art",    images: [1,2,3,4,5].map(n => `assets/dogframe${n}.png`) },
       { type: "greeting-card", label: "Greeting Card", images: [1,2,3,4,5].map(n => `assets/card${n}.png`) },
@@ -237,7 +238,7 @@
       msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
       genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
       postgen.style.display = "none"; mpLoad.style.display = "none";
-      mockupArt.style.display = "none"; mockupArt.src = "";
+      mockupBase.style.display = "none"; mockupArt.style.display = "none"; mockupArt.src = "";
     }
 
     function closeModal() { overlay.classList.remove("open"); }
@@ -258,7 +259,7 @@
       drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
-      mockupArt.style.display = "none";
+      mockupBase.style.display = "none"; mockupArt.style.display = "none";
       showRemaining(file);
     }
 
@@ -297,6 +298,7 @@
         if (error) throw error;
 
         previewUrl = data.previewUrl;
+        mockupBase.style.display = "block";
         mockupArt.src = previewUrl;
         mockupArt.style.display = "block";
 

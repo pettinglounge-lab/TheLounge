@@ -20,7 +20,7 @@
       <h1>Keep their<br />memory close.</h1>
       <p class="lead">Turn a favorite photo into a timeless keepsake portrait — a heartfelt tribute to the pets and moments you love most.</p>
       <div class="cta-row">
-        <a href="projects.html" class="btn btn-primary">Create yours</a>
+        <a href="#choose" class="btn btn-primary">Choose a product</a>
         <a href="gallery.html" class="btn btn-outline">See examples</a>
       </div>
       <p class="reassure">Free shipping · Handcrafted with care · A meaningful gift</p>
@@ -42,6 +42,27 @@
       </div>
     </div>
   </section>
+
+  <section id="choose" class="projects-page" style="padding-top:28px;">
+    <h2>Choose a keepsake product</h2>
+    <p class="sub" style="color:var(--ink-soft); margin:6px 0 22px;">Select a product, then create your portrait.</p>
+    <div id="rows"><div class="empty">Loading products…</div></div>
+  </section>
+
+  <div class="modal-overlay" id="overlay">
+    <div class="modal">
+      <button class="modal-close" id="close" aria-label="Close">×</button>
+      <div class="modal-grid">
+        <div class="modal-preview" id="mp-panel"><div class="mockup-stage" id="stage"><img class="mockup-base" id="mockup-base" alt="Product mockup" /><img class="mockup-art" id="mockup-art" alt="Your generated portrait" /></div><div class="mp-loading" id="mp-loading" style="display:none;"><div class="spinner"></div>Creating your portrait…</div></div></div>
+        <div class="modal-form">
+          <h2 id="modal-title">Custom Keepsake Portrait</h2><p class="modal-sub">Choose a theme and upload a reference photo.</p>
+          <label class="field-label" for="styleSelect">Theme</label><select id="styleSelect" class="select"><option>Memory White Background</option></select>
+          <label class="field-label">Reference image</label><div class="drop" id="drop" tabindex="0" role="button"><div><strong>Upload a photo</strong> or click to browse</div><div id="fname" style="margin-top:6px;"></div></div><input type="file" id="file" accept="image/*" hidden />
+          <button class="btn btn-primary" id="generate">Generate preview</button><div id="postgen" style="display:none;"><a class="btn btn-primary" id="continue" style="width:100%;text-align:center;">Continue to checkout</a><button class="btn btn-outline btn-sm" id="regen" style="width:100%;margin-top:8px;">Regenerate</button></div><p class="msg" id="msg"></p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= STEPS ================= -->
   <section class="steps">
@@ -83,6 +104,31 @@
     </div>
   </footer>
 
+  <script type="module">
+    import { supabase } from "./supabaseClient.js";
+    const CATEGORY = "memory";
+    let products = {}, selectedProduct, selectedFile, scaledDataUrl, previewUrl;
+    const rows = document.getElementById("rows"), overlay = document.getElementById("overlay"), mockupBase = document.getElementById("mockup-base"), mockupArt = document.getElementById("mockup-art"), drop = document.getElementById("drop"), fileIn = document.getElementById("file"), fname = document.getElementById("fname"), msg = document.getElementById("msg"), genBtn = document.getElementById("generate"), postgen = document.getElementById("postgen"), regenBtn = document.getElementById("regen"), continueBtn = document.getElementById("continue"), loading = document.getElementById("mp-loading");
+    const mockup = type => type === "framed-poster" ? "frameblack.png" : type === "greeting-card" ? "card.png" : "poster.png";
+    const opening = type => type === "framed-poster" ? { top: "11%", left: "20%", width: "60%", height: "78%" } : type === "greeting-card" ? { top: "15%", left: "26%", width: "48%", height: "70%" } : { top: "17%", left: "30%", width: "40%", height: "68%" };
+    async function init() {
+      const { data } = await supabase.from("products").select("*").eq("category", CATEGORY);
+      (data || []).forEach(product => products[product.product_type] = product);
+      const available = Object.values(products).filter(product => product.available && (product.variants || []).length);
+      rows.innerHTML = available.length ? `<section class="product-row"><div class="product-strip">${available.map(product => `<button class="product-tile" data-type="${product.product_type}"><img src="${product.image_url || `assets/t/${mockup(product.product_type)}`}" alt="${product.title}" onerror="this.src='assets/t/${mockup(product.product_type)}'" /><span class="pick">${product.title}</span></button>`).join("")}</div></section>` : `<div class="empty">Keepsake products are not available yet.</div>`;
+    }
+    rows.addEventListener("click", event => { const tile = event.target.closest(".product-tile"); if (!tile) return; selectedProduct = products[tile.dataset.type]; reset(); document.getElementById("modal-title").textContent = selectedProduct.title || "Custom Keepsake Portrait"; mockupBase.src = `assets/t/${mockup(selectedProduct.product_type)}`; Object.assign(mockupArt.style, opening(selectedProduct.product_type)); overlay.classList.add("open"); });
+    function reset() { selectedFile = scaledDataUrl = previewUrl = null; fileIn.value = ""; fname.textContent = ""; msg.textContent = ""; postgen.style.display = "none"; genBtn.style.display = "block"; mockupBase.style.display = "none"; mockupArt.style.display = "none"; }
+    document.getElementById("close").addEventListener("click", () => overlay.classList.remove("open")); overlay.addEventListener("click", event => { if (event.target === overlay) overlay.classList.remove("open"); });
+    drop.addEventListener("click", () => fileIn.click()); fileIn.addEventListener("change", event => pick(event.target.files[0])); drop.addEventListener("dragover", event => event.preventDefault()); drop.addEventListener("drop", event => { event.preventDefault(); pick(event.dataTransfer.files[0]); });
+    function pick(file) { if (!file || !file.type.startsWith("image/")) return; selectedFile = file; scaledDataUrl = previewUrl = null; fname.textContent = `✓ ${file.name}`; postgen.style.display = "none"; genBtn.style.display = "block"; mockupBase.style.display = "none"; mockupArt.style.display = "none"; }
+    async function generate() { if (!selectedFile) { msg.textContent = "Please upload a photo first."; msg.className = "msg err"; return; } loading.style.display = "flex"; genBtn.disabled = true; try { if (!scaledDataUrl) scaledDataUrl = await scale(selectedFile); const fd = new FormData(); fd.append("image", blob(scaledDataUrl), "photo.jpg"); fd.append("productType", CATEGORY); fd.append("style", document.getElementById("styleSelect").value); fd.append("note", ""); const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd }); if (error) throw error; previewUrl = data.previewUrl; mockupBase.style.display = "block"; mockupArt.src = previewUrl; mockupArt.style.display = "block"; genBtn.style.display = "none"; postgen.style.display = "block"; } catch (error) { msg.textContent = `Couldn't generate: ${error.message || error}`; msg.className = "msg err"; } finally { loading.style.display = "none"; genBtn.disabled = false; } }
+    genBtn.addEventListener("click", generate); regenBtn.addEventListener("click", generate);
+    continueBtn.addEventListener("click", () => { sessionStorage.setItem("ptl_order", JSON.stringify({ category: CATEGORY, style: document.getElementById("styleSelect").value, product_type: selectedProduct.product_type, printify_product_id: selectedProduct.printify_product_id, blueprint_id: selectedProduct.blueprint_id, print_provider_id: selectedProduct.print_provider_id, title: selectedProduct.title })); sessionStorage.setItem("ptl_preview", previewUrl); window.location.href = "checkout.html"; });
+    function scale(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => { const image = new Image(); image.onload = () => { let { width, height } = image; const ratio = Math.min(1, 1280 / Math.max(width, height)); const canvas = document.createElement("canvas"); canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL("image/jpeg", .85)); }; image.onerror = reject; image.src = reader.result; }; reader.onerror = reject; reader.readAsDataURL(file); }); }
+    function blob(dataUrl) { const [head, data] = dataUrl.split(","); const bytes = atob(data); return new Blob([Uint8Array.from(bytes, char => char.charCodeAt(0))], { type: head.match(/:(.*?);/)[1] }); }
+    init();
+  </script>
   <script type="module" src="Navbar.js"></script>
 </body>
 </html>
