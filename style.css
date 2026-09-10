@@ -139,8 +139,8 @@ a { color: inherit; }
    HERO
    ========================================================================= */
 .hero {
-  display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px;
-  align-items: center; padding: 88px 0 96px;
+  display: grid; grid-template-columns: 1.05fr .95fr; gap: 42px;
+  align-items: center; padding: 44px 0 48px;
 }
 .hero h1 {
   font-size: 54px; line-height: 1.05; letter-spacing: -.02em; font-weight: 700;
@@ -153,7 +153,7 @@ a { color: inherit; }
 /* the framed portrait shown in the hero */
 .frame {
   background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
-  box-shadow: var(--shadow); padding: 22px; justify-self: center; max-width: 380px; width: 100%;
+  box-shadow: var(--shadow); padding: 14px; justify-self: center; max-width: 310px; width: 100%;
 }
 .frame .art {
   background: var(--wash); border-radius: 8px; aspect-ratio: 4/5;
@@ -341,6 +341,7 @@ a { color: inherit; }
 .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
 #saved-section { text-align: center; }
 #saved-section .project-grid { text-align: left; }
+#saved-section .project-grid .empty { grid-column: 1 / -1; width: 100%; text-align: center; }
 .project-card { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff; }
 .project-card img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; background: var(--wash); }
 .project-card .body { padding: 12px 14px; }

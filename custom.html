@@ -53,7 +53,7 @@
           </div>
           <input type="file" id="file" accept="image/*" hidden />
           <label class="field-label" for="note">Custom prompt</label>
-          <textarea id="note" placeholder="Describe the artwork you want, e.g. 'soft floral background, warm colors, add the name Biscuit'"></textarea>
+          <textarea id="note" placeholder="Describe the artwork you want."></textarea>
           <button class="btn btn-primary" id="create" disabled>Create project</button>
           <p class="msg" id="msg"></p>
         </div>
@@ -89,6 +89,12 @@
     const categoryMsg = document.getElementById("category-msg");
     let selectedFile = null, selectedType = null, selectedCategory = null, selectedProduct = null;
 
+    const PROMPT_EXAMPLES = {
+      pet: "Describe the artwork you want, e.g. ‘soft floral background, warm colors, add the name Biscuit’",
+      home: "Describe the artwork you want, e.g. ‘a cozy watercolor of this home in autumn, with warm porch lights and fall leaves’",
+      memory: "Describe the artwork you want, e.g. ‘a gentle, timeless memorial portrait with soft clouds, wildflowers, and the words Forever Loved’",
+    };
+
     // Products come live from the catalog table.
     let allProducts = [];
     async function loadCatalog() {
@@ -113,6 +119,7 @@
       selectedProduct = allProducts.find(p => p.category === selectedCategory && p.product_type === selectedType && p.available && (p.variants || []).length);
       if (!selectedProduct) { categoryMsg.textContent = "This product is not available for that category yet."; categoryMsg.className = "msg err"; return; }
       document.getElementById("custom-title").textContent = `Custom ${selectedCategory} ${selectedProduct.title || "portrait"}`;
+      note.placeholder = PROMPT_EXAMPLES[selectedCategory];
       categoryStep.hidden = true; detailsStep.hidden = false;
     }));
 
