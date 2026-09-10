@@ -8,52 +8,57 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=custom-picker-v3" />
 </head>
 <body>
 
-  <site-nav active="projects"></site-nav>
+  <site-nav active="custom"></site-nav>
 
   <main class="projects-page">
     <h1>Custom</h1>
 
-    <!-- CREATE BOX -->
-    <section class="panel create-box">
-      <h2>Create a new portrait</h2>
-
-      <label class="field-label">Category</label>
-      <select id="catSelect" class="select">
-        <option value="pet">Pet</option>
-        <option value="home">Home</option>
-        <option value="memory">Memory</option>
-      </select>
-
-      <label class="field-label">Product</label>
-      <select id="prodSelect" class="select"></select>
-
-      <label class="field-label">Style</label>
-      <select id="styleSelect" class="select"></select>
-
-      <label class="field-label">Photo</label>
-      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a photo">
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-          <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
-          <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-        </svg>
-        <div><strong>Upload a photo</strong> or click to browse</div>
-        <div id="fname" style="margin-top:6px;"></div>
+    <section class="custom-picker" aria-labelledby="custom-picker-title">
+      <h2 id="custom-picker-title">Start with a product</h2>
+      <p class="sub">Choose a blank product canvas, then tell us what you would like to create.</p>
+      <div class="custom-product-grid">
+        <button class="custom-product" data-type="framed-poster"><img src="assets/t/frameblack.png" alt="Blank framed art" /><span>Framed Art</span></button>
+        <button class="custom-product" data-type="greeting-card"><img src="assets/t/card.png" alt="Blank greeting card" /><span>Greeting Card</span></button>
+        <button class="custom-product" data-type="poster"><img src="assets/t/poster.png" alt="Blank rolled poster" /><span>Rolled Poster</span></button>
       </div>
-      <input type="file" id="file" accept="image/*" hidden />
-
-      <p class="upload-tip">
-        <strong>Tip:</strong> photos taken in bright, direct light work best — try to avoid strong shadows.
-      </p>
-
-      <textarea id="note" placeholder="Add any notes (optional) — e.g. 'sage green background, add the name Biscuit'"></textarea>
-
-      <button class="btn btn-primary" id="create" disabled>Create project</button>
-      <p class="msg" id="msg"></p>
     </section>
+
+    <div class="modal-overlay" id="overlay">
+      <div class="modal custom-modal">
+        <button class="modal-close" id="close" aria-label="Close">×</button>
+        <div class="custom-step" id="category-step">
+          <p class="eyebrow">STEP 1 OF 2</p>
+          <h2>What would you like to create?</h2>
+          <p class="modal-sub">Choose the subject for your custom product.</p>
+          <div class="category-grid">
+            <button class="category-choice" data-category="pet">Pet</button>
+            <button class="category-choice" data-category="home">Home</button>
+            <button class="category-choice" data-category="memory">Memory</button>
+          </div>
+          <p class="msg" id="category-msg"></p>
+        </div>
+        <div class="custom-step" id="details-step" hidden>
+          <button class="back-link" id="back" type="button">← Change selection</button>
+          <p class="eyebrow">STEP 2 OF 2</p>
+          <h2 id="custom-title">Create your portrait</h2>
+          <p class="modal-sub">Upload a reference image and describe the result you want.</p>
+          <label class="field-label">Reference image</label>
+          <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a reference image">
+            <div><strong>Upload a photo</strong> or click to browse</div>
+            <div id="fname" style="margin-top:6px;"></div>
+          </div>
+          <input type="file" id="file" accept="image/*" hidden />
+          <label class="field-label" for="note">Custom prompt</label>
+          <textarea id="note" placeholder="Describe the artwork you want, e.g. 'soft floral background, warm colors, add the name Biscuit'"></textarea>
+          <button class="btn btn-primary" id="create" disabled>Create project</button>
+          <p class="msg" id="msg"></p>
+        </div>
+      </div>
+    </div>
 
     <!-- SAVED PROJECTS (signed-in only) -->
     <section id="saved-section" style="display:none;">
@@ -78,36 +83,38 @@
     const note      = document.getElementById("note");
     const createBtn = document.getElementById("create");
     const msg       = document.getElementById("msg");
-    const catSelect   = document.getElementById("catSelect");
-    const prodSelect  = document.getElementById("prodSelect");
-    const styleSelect = document.getElementById("styleSelect");
-    let selectedFile = null;
-
-    // Styles offered per category (keep in sync with the preview-portrait function).
-    const STYLES_BY_CATEGORY = {
-      pet:    ["White Background", "Royal Renaissance", "Floral", "Princess"],
-      home:   ["Original", "Winter"],
-      memory: ["Memory White Background"],
-    };
+    const overlay = document.getElementById("overlay");
+    const categoryStep = document.getElementById("category-step");
+    const detailsStep = document.getElementById("details-step");
+    const categoryMsg = document.getElementById("category-msg");
+    let selectedFile = null, selectedType = null, selectedCategory = null, selectedProduct = null;
 
     // Products come live from the catalog table.
     let allProducts = [];
     async function loadCatalog() {
       const { data } = await supabase.from("products").select("*");
       allProducts = data || [];
-      refreshCategory();
     }
-    function refreshCategory() {
-      const cat = catSelect.value;
-      const prods = allProducts.filter(p => p.category === cat && p.available);
-      prodSelect.innerHTML = prods.length
-        ? prods.map(p => `<option value="${p.printify_product_id}">${escapeHtml(p.title || p.product_type)}</option>`).join("")
-        : `<option value="">None available yet</option>`;
-      const styles = STYLES_BY_CATEGORY[cat] || [];
-      styleSelect.innerHTML = styles.map(s => `<option value="${s}">${escapeHtml(s)}</option>`).join("");
-    }
-    catSelect.addEventListener("change", refreshCategory);
     loadCatalog();
+
+    document.querySelectorAll(".custom-product").forEach(btn => btn.addEventListener("click", () => {
+      selectedType = btn.dataset.type;
+      selectedCategory = selectedProduct = null;
+      selectedFile = null; fileIn.value = ""; fname.textContent = "";
+      categoryMsg.textContent = ""; msg.textContent = "";
+      categoryStep.hidden = false; detailsStep.hidden = true;
+      overlay.classList.add("open");
+    }));
+    document.getElementById("close").addEventListener("click", () => overlay.classList.remove("open"));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
+    document.getElementById("back").addEventListener("click", () => { categoryStep.hidden = false; detailsStep.hidden = true; });
+    document.querySelectorAll(".category-choice").forEach(btn => btn.addEventListener("click", () => {
+      selectedCategory = btn.dataset.category;
+      selectedProduct = allProducts.find(p => p.category === selectedCategory && p.product_type === selectedType && p.available && (p.variants || []).length);
+      if (!selectedProduct) { categoryMsg.textContent = "This product is not available for that category yet."; categoryMsg.className = "msg err"; return; }
+      document.getElementById("custom-title").textContent = `Custom ${selectedCategory} ${selectedProduct.title || "portrait"}`;
+      categoryStep.hidden = true; detailsStep.hidden = false;
+    }));
 
     // ---- pick / drop a file ----
     drop.addEventListener("click", () => fileIn.click());
@@ -138,17 +145,17 @@
           .upload(photoPath, selectedFile, { contentType: selectedFile.type });
         if (up.error) throw up.error;
 
-        const selProd = allProducts.find(p => p.printify_product_id === prodSelect.value);
         const ins = await supabase.from("portraits").insert({
           user_id: session.user.id,
           photo_path: photoPath,
           config: {
             note: note.value.trim() || null,
-            category: catSelect.value,
-            productType: catSelect.value,
-            printify_product_id: prodSelect.value || null,
-            product_title: selProd ? selProd.title : null,
-            style: styleSelect.value || null,
+            prompt: note.value.trim() || null,
+            category: selectedCategory,
+            productType: selectedProduct.product_type,
+            printify_product_id: selectedProduct.printify_product_id,
+            product_title: selectedProduct.title || null,
+            style: null,
           },
           status: "draft",
         });
@@ -159,11 +166,13 @@
         msg.textContent = "✓ Project created. Hit “Generate portrait” below to make the artwork.";
         msg.className = "msg ok";
         loadSaved();
+        overlay.classList.remove("open");
       } catch (e) {
         msg.textContent = "Something went wrong: " + e.message;
         msg.className = "msg err";
       } finally {
         createBtn.textContent = "Create project";
+        createBtn.disabled = !selectedFile;
       }
     });
 

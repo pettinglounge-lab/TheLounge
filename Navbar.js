@@ -7,12 +7,12 @@
 // Layout:  Petting Lounge | Create ▾ · Gallery · Custom | account
 //   - "Create" ▾ -> Pet (index.html), Home (home.html), Memory (memories.html)
 //   - "Gallery"  -> gallery.html
-//   - "Custom"   -> projects.html
+//   - "Custom"   -> custom.html
 //   - right link -> "Account" (account.html) if signed in, else "Sign up" (signup.html)
 //
 // Highlight the current page with <site-nav active="..."> using one of:
 //   pets | home | memories | create   (all highlight the Create button)
-//   gallery | projects
+//   gallery | custom
 
 import { supabase } from "./supabaseClient.js";
 
@@ -54,7 +54,7 @@ class SiteNav extends HTMLElement {
           </div>
 
           <a href="gallery.html"  class="${on("gallery")}">Gallery</a>
-          <a href="projects.html" class="${on("projects")}">Custom</a>
+          <a href="custom.html" class="${on("custom")}">Custom</a>
         </nav>
 
         <div class="account">
