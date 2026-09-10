@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=custom-picker-v3" />
+  <link rel="stylesheet" href="style.css?v=custom-picker-v4" />
 </head>
 <body>
 
@@ -94,6 +94,11 @@
       home: "Describe the artwork you want, e.g. ‘a cozy watercolor of this home in autumn, with warm porch lights and fall leaves’",
       memory: "Describe the artwork you want, e.g. ‘a gentle, timeless memorial portrait with soft clouds, wildflowers, and the words Forever Loved’",
     };
+    const CUSTOM_PRODUCT_TITLES = {
+      "greeting-card": "Custom Greeting Card",
+      "framed-poster": "Custom Framed Matte Wall Art",
+      poster: "Custom Rolled Poster",
+    };
 
     // Products come live from the catalog table.
     let allProducts = [];
@@ -118,7 +123,7 @@
       selectedCategory = btn.dataset.category;
       selectedProduct = allProducts.find(p => p.category === selectedCategory && p.product_type === selectedType && p.available && (p.variants || []).length);
       if (!selectedProduct) { categoryMsg.textContent = "This product is not available for that category yet."; categoryMsg.className = "msg err"; return; }
-      document.getElementById("custom-title").textContent = `Custom ${selectedCategory} ${selectedProduct.title || "portrait"}`;
+      document.getElementById("custom-title").textContent = CUSTOM_PRODUCT_TITLES[selectedType] || "Custom Product";
       note.placeholder = PROMPT_EXAMPLES[selectedCategory];
       categoryStep.hidden = true; detailsStep.hidden = false;
     }));
