@@ -8,13 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=custom-picker-v4" />
+  <link rel="stylesheet" href="style.css?v=custom-picker-v5" />
 </head>
 <body>
 
   <site-nav active="custom"></site-nav>
 
   <main class="projects-page">
+    <p class="custom-credit-status" id="credits-note" aria-live="polite"></p>
     <h1>Custom</h1>
 
     <section class="custom-picker" aria-labelledby="custom-picker-title">
@@ -31,7 +32,7 @@
       <div class="modal custom-modal">
         <button class="modal-close" id="close" aria-label="Close">×</button>
         <div class="custom-step" id="category-step">
-          <p class="eyebrow">STEP 1 OF 2</p>
+          <p class="eyebrow" id="category-step-count">STEP 1 OF 2</p>
           <h2>What would you like to create?</h2>
           <p class="modal-sub">Choose the subject for your custom product.</p>
           <div class="category-grid">
@@ -43,7 +44,7 @@
         </div>
         <div class="custom-step" id="details-step" hidden>
           <button class="back-link" id="back" type="button">← Change selection</button>
-          <p class="eyebrow">STEP 2 OF 2</p>
+          <p class="eyebrow" id="details-step-count">STEP 2 OF 2</p>
           <h2 id="custom-title">Create your portrait</h2>
           <p class="modal-sub">Upload a reference image and describe the result you want.</p>
           <label class="field-label">Reference image</label>
@@ -57,6 +58,20 @@
           <button class="btn btn-primary" id="create" disabled>Create project</button>
           <p class="msg" id="msg"></p>
         </div>
+        <div class="custom-step" id="card-message-step" hidden>
+          <button class="back-link" id="card-back" type="button">← Back to artwork details</button>
+          <p class="eyebrow">STEP 3 OF 3</p>
+          <h2>Write your card message</h2>
+          <p class="modal-sub">Your message will be placed on the right-hand page of the card.</p>
+          <div class="card-inside-preview" aria-label="Inside card message preview">
+            <img src="assets/t/cardinside.png" alt="Blank inside of a greeting card" />
+            <div class="card-inside-message" id="card-message-preview">Your message here</div>
+          </div>
+          <label class="field-label" for="card-message">Inside message <span class="optional">(optional)</span></label>
+          <textarea id="card-message" maxlength="400" placeholder="Thinking of you…"></textarea>
+          <button class="btn btn-primary" id="save-card" type="button">Create project</button>
+          <p class="msg" id="card-msg"></p>
+        </div>
       </div>
     </div>
 
@@ -69,8 +84,10 @@
 
   <script type="module">
     import { supabase } from "./supabaseClient.js";
+    import { GENERATION_COST, canAffordGeneration, configureCreditProfile, creditBalanceText, dailyCreditAllowance, getDailyCredits, spendGenerationCredits } from "./credits.js";
 
     const { data: { session } } = await supabase.auth.getSession();
+    configureCreditProfile(session?.user);
     // My Projects is the one account-only area — send guests to sign up.
     if (!session || session.user.is_anonymous === true) {
       window.location.href = "signup.html";
@@ -86,7 +103,15 @@
     const overlay = document.getElementById("overlay");
     const categoryStep = document.getElementById("category-step");
     const detailsStep = document.getElementById("details-step");
+    const cardMessageStep = document.getElementById("card-message-step");
     const categoryMsg = document.getElementById("category-msg");
+    const categoryStepCount = document.getElementById("category-step-count");
+    const detailsStepCount = document.getElementById("details-step-count");
+    const cardMessage = document.getElementById("card-message");
+    const cardMessagePreview = document.getElementById("card-message-preview");
+    const saveCardBtn = document.getElementById("save-card");
+    const cardMsg = document.getElementById("card-msg");
+    const creditsNote = document.getElementById("credits-note");
     let selectedFile = null, selectedType = null, selectedCategory = null, selectedProduct = null;
 
     const PROMPT_EXAMPLES = {
@@ -112,21 +137,30 @@
       selectedType = btn.dataset.type;
       selectedCategory = selectedProduct = null;
       selectedFile = null; fileIn.value = ""; fname.textContent = "";
-      categoryMsg.textContent = ""; msg.textContent = "";
-      categoryStep.hidden = false; detailsStep.hidden = true;
+      cardMessage.value = ""; cardMessagePreview.textContent = "Your message here";
+      categoryMsg.textContent = ""; msg.textContent = ""; cardMsg.textContent = "";
+      categoryStepCount.textContent = selectedType === "greeting-card" ? "STEP 1 OF 3" : "STEP 1 OF 2";
+      detailsStepCount.textContent = selectedType === "greeting-card" ? "STEP 2 OF 3" : "STEP 2 OF 2";
+      categoryStep.hidden = false; detailsStep.hidden = true; cardMessageStep.hidden = true;
       overlay.classList.add("open");
     }));
     document.getElementById("close").addEventListener("click", () => overlay.classList.remove("open"));
     overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
-    document.getElementById("back").addEventListener("click", () => { categoryStep.hidden = false; detailsStep.hidden = true; });
+    document.getElementById("back").addEventListener("click", () => { categoryStep.hidden = false; detailsStep.hidden = true; cardMessageStep.hidden = true; });
+    document.getElementById("card-back").addEventListener("click", () => { detailsStep.hidden = false; cardMessageStep.hidden = true; });
     document.querySelectorAll(".category-choice").forEach(btn => btn.addEventListener("click", () => {
       selectedCategory = btn.dataset.category;
       selectedProduct = allProducts.find(p => p.category === selectedCategory && p.product_type === selectedType && p.available && (p.variants || []).length);
       if (!selectedProduct) { categoryMsg.textContent = "This product is not available for that category yet."; categoryMsg.className = "msg err"; return; }
       document.getElementById("custom-title").textContent = CUSTOM_PRODUCT_TITLES[selectedType] || "Custom Product";
       note.placeholder = PROMPT_EXAMPLES[selectedCategory];
-      categoryStep.hidden = true; detailsStep.hidden = false;
+      createBtn.textContent = selectedType === "greeting-card" ? "Continue to card message" : "Create project";
+      categoryStep.hidden = true; detailsStep.hidden = false; cardMessageStep.hidden = true;
     }));
+
+    cardMessage.addEventListener("input", () => {
+      cardMessagePreview.textContent = cardMessage.value.trim() || "Your message here";
+    });
 
     // ---- pick / drop a file ----
     drop.addEventListener("click", () => fileIn.click());
@@ -145,11 +179,26 @@
       createBtn.disabled = false;
     }
 
-    // ---- create the project ----
-    createBtn.addEventListener("click", async () => {
+    // Greeting cards get an optional message preview before the project is saved.
+    createBtn.addEventListener("click", () => {
       if (!selectedFile) return;
+      if (selectedType === "greeting-card") {
+        msg.textContent = "";
+        detailsStep.hidden = true;
+        cardMessageStep.hidden = false;
+        return;
+      }
+      saveProject();
+    });
+    saveCardBtn.addEventListener("click", saveProject);
+
+    // ---- create the project ----
+    async function saveProject() {
+      if (!selectedFile) return;
+      const activeMsg = selectedType === "greeting-card" ? cardMsg : msg;
       createBtn.disabled = true; createBtn.textContent = "Creating…";
-      msg.textContent = ""; msg.className = "msg";
+      saveCardBtn.disabled = true; saveCardBtn.textContent = "Creating…";
+      activeMsg.textContent = ""; activeMsg.className = "msg";
       try {
         const ext = selectedFile.name.split(".").pop();
         const photoPath = `${session.user.id}/${crypto.randomUUID()}.${ext}`;
@@ -168,31 +217,42 @@
             printify_product_id: selectedProduct.printify_product_id,
             product_title: selectedProduct.title || null,
             style: null,
+            inside_message: selectedType === "greeting-card" ? cardMessage.value.trim() || null : null,
           },
           status: "draft",
         });
         if (ins.error) throw ins.error;
 
-        selectedFile = null; fileIn.value = ""; note.value = "";
+        selectedFile = null; fileIn.value = ""; note.value = ""; cardMessage.value = "";
         drop.classList.remove("has-file"); fname.textContent = "";
-        msg.textContent = "✓ Project created. Hit “Generate portrait” below to make the artwork.";
-        msg.className = "msg ok";
+        activeMsg.textContent = "✓ Project created. Hit “Generate portrait” below to make the artwork.";
+        activeMsg.className = "msg ok";
         loadSaved();
         overlay.classList.remove("open");
       } catch (e) {
-        msg.textContent = "Something went wrong: " + e.message;
-        msg.className = "msg err";
+        activeMsg.textContent = "Something went wrong: " + e.message;
+        activeMsg.className = "msg err";
       } finally {
-        createBtn.textContent = "Create project";
+        createBtn.textContent = selectedType === "greeting-card" ? "Continue to card message" : "Create project";
         createBtn.disabled = !selectedFile;
+        saveCardBtn.textContent = "Create project";
+        saveCardBtn.disabled = !selectedFile;
       }
-    });
+    }
 
     // ---- saved projects ----
+    function showCredits() {
+      const { remaining } = getDailyCredits();
+      creditsNote.textContent = remaining >= GENERATION_COST
+        ? `${creditBalanceText()} · ${GENERATION_COST} credits per generation`
+        : `No credits remaining today. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`;
+    }
+
     async function loadSaved() {
       const section = document.getElementById("saved-section");
       const box = document.getElementById("projects");
       section.style.display = "block";
+      showCredits();
       box.innerHTML = `<div class="empty">Loading…</div>`;
 
       const { data: rows, error } = await supabase
@@ -222,11 +282,11 @@
 
         let action;
         if (rendered) {
-          action = `<button class="btn btn-outline btn-sm generate" data-id="${r.id}">Regenerate</button>`;
+          action = `<button class="btn btn-outline btn-sm generate" data-id="${r.id}">Regenerate (${GENERATION_COST} credits)</button>`;
         } else if (r.status === "rendering") {
           action = `<span class="badge">rendering…</span>`;
         } else {
-          action = `<button class="btn btn-primary btn-sm generate" data-id="${r.id}">Generate portrait</button>`;
+          action = `<button class="btn btn-primary btn-sm generate" data-id="${r.id}">Generate portrait (${GENERATION_COST} credits)</button>`;
         }
 
         return `
@@ -249,6 +309,11 @@
 
     // ---- call the edge function to render ----
     async function generate(btn) {
+      if (!canAffordGeneration()) {
+        alert(`You need ${GENERATION_COST} credits to generate. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`);
+        showCredits();
+        return;
+      }
       const portraitId = btn.dataset.id;
       btn.disabled = true;
       btn.textContent = "Rendering… (~15s)";
@@ -257,6 +322,7 @@
           body: { portraitId },
         });
         if (error) throw error;
+        spendGenerationCredits();
         loadSaved(); // refresh to show the finished artwork
       } catch (e) {
         alert("Render failed: " + (e.message || e));

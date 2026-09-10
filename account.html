@@ -35,6 +35,16 @@
       <p class="msg" id="reset-msg"></p>
     </section>
 
+    <!-- GENERATION CREDITS -->
+    <section class="panel">
+      <h2>Generation credits</h2>
+      <div class="info-row">
+        <span class="label">Current balance</span>
+        <span class="value" id="credit-balance">—</span>
+      </div>
+      <p class="credit-summary" id="credit-summary"></p>
+    </section>
+
     <!-- ORDERS -->
     <section class="panel">
       <h2>Your orders</h2>
@@ -54,6 +64,7 @@
   <!-- account logic -->
   <script type="module">
     import { supabase } from "./supabaseClient.js";
+    import { GENERATION_COST, configureCreditProfile, dailyCreditAllowance, getDailyCredits } from "./credits.js";
 
     let userEmail = null;
 
@@ -62,7 +73,9 @@
     if (!session || session.user.is_anonymous === true) {
       window.location.href = "login.html";
     } else {
+      configureCreditProfile(session.user);
       showAccount(session.user);
+      showCreditBalance();
       loadOrders();
     }
 
@@ -73,6 +86,15 @@
       document.getElementById("since").textContent =
         d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
     }
+
+    function showCreditBalance() {
+      const { remaining } = getDailyCredits();
+      const generations = Math.floor(remaining / GENERATION_COST);
+      document.getElementById("credit-balance").textContent = `${remaining} credits`;
+      document.getElementById("credit-summary").textContent =
+        `${generations} generation${generations === 1 ? "" : "s"} available today. Signed-in members receive ${dailyCreditAllowance()} credits (5 generations) each day.`;
+    }
+    window.addEventListener("storage", showCreditBalance);
 
     // 2. Orders (RLS returns only this user's rows).
     async function loadOrders() {

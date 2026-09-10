@@ -112,8 +112,10 @@
 
   <script type="module">
     import { supabase } from "./supabaseClient.js";
+    import { GENERATION_COST, canAffordGeneration, creditBalanceText, dailyCreditAllowance, getDailyCredits, initializeCreditProfile, spendGenerationCredits } from "./credits.js";
 
-    const LIMIT = 3; // previews per photo per day
+    await initializeCreditProfile();
+
     const CATEGORY = "pet";
     const STYLE_OPTIONS = ["White Background", "Royal Renaissance", "Floral", "Princess"];
 
@@ -260,29 +262,22 @@
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
       mockupBase.style.display = "none"; mockupArt.style.display = "none";
-      showRemaining(file);
+      showCredits();
     }
 
-    // ---- 3-per-photo/day limit ----
-    function fingerprint(file) { return `${file.name}_${file.size}_${file.lastModified}`; }
-    function readMap() { try { return JSON.parse(localStorage.getItem("ptl_attempts") || "{}"); } catch { return {}; } }
-    function today() { return new Date().toISOString().slice(0, 10); }
-    function used(file) { const r = readMap()[fingerprint(file)]; return (r && r.day === today()) ? r.count : 0; }
-    function bump(file) {
-      const map = readMap(); const fp = fingerprint(file);
-      const r = (map[fp] && map[fp].day === today()) ? map[fp] : { day: today(), count: 0 };
-      r.count += 1; map[fp] = r; localStorage.setItem("ptl_attempts", JSON.stringify(map)); return r.count;
-    }
-    function showRemaining(file) {
-      const left = LIMIT - used(file);
-      attempts.textContent = left > 0 ? `${left} preview${left === 1 ? "" : "s"} left for this photo today` : "No previews left for this photo today";
+    // ---- shared daily credits ----
+    function showCredits() {
+      const { remaining } = getDailyCredits();
+      attempts.textContent = remaining >= GENERATION_COST
+        ? `${creditBalanceText()} · ${GENERATION_COST} credits per generation`
+        : `No credits remaining today. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`;
     }
 
     // ---- generate ----
     async function generate() {
       msg.textContent = ""; msg.className = "msg";
       if (!selectedFile) { msg.textContent = "Please upload a photo first."; msg.className = "msg err"; return; }
-      if (used(selectedFile) >= LIMIT) { msg.textContent = "You've used all 3 previews for this photo today. Try a different photo."; msg.className = "msg err"; return; }
+      if (!canAffordGeneration()) { msg.textContent = `You need ${GENERATION_COST} credits to generate. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`; msg.className = "msg err"; showCredits(); return; }
 
       setLoading(true);
       try {
@@ -302,13 +297,12 @@
         mockupArt.src = previewUrl;
         mockupArt.style.display = "block";
 
-        const count = bump(selectedFile);
-        const left = LIMIT - count;
+        const balance = spendGenerationCredits();
         genBtn.style.display = "none";
         postgen.style.display = "block";
-        if (left > 0) { regenBtn.style.display = "block"; regenBtn.disabled = false; regenBtn.textContent = `Regenerate (${left} left)`; }
+        if (balance && balance.remaining >= GENERATION_COST) { regenBtn.style.display = "block"; regenBtn.disabled = false; regenBtn.textContent = `Regenerate (${GENERATION_COST} credits)`; }
         else { regenBtn.style.display = "none"; }
-        attempts.textContent = left > 0 ? `${left} preview${left === 1 ? "" : "s"} left for this photo today` : "That was your last preview for this photo today";
+        showCredits();
       } catch (e) {
         msg.textContent = "Couldn't generate: " + (e.message || e); msg.className = "msg err";
       } finally { setLoading(false); }
