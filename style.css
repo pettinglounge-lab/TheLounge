@@ -612,6 +612,31 @@ a { color: inherit; }
 .modal-form { min-width: 0; overflow-wrap: anywhere; }
 .modal-grid { min-width: 0; }
 
+/* Mobile typography only — desktop sizing remains unchanged. */
+@media (max-width: 640px) {
+  body { font-size: 15px; }
+  .hero h1,
+  .home-hero h1,
+  .legal-page h1 { font-size: 34px; }
+  .hero p.lead,
+  .home-hero p.lead { font-size: 16px; }
+  .projects-page h1,
+  .account-page h1 { font-size: 28px; }
+  .strip-head h2 { font-size: 27px; }
+  .steps h2 { font-size: 26px; }
+  .frame .art .petname { font-size: 22px; }
+  .product-card h3 { font-size: 18px; }
+  .row-title { font-size: 20px; }
+  .custom-step h2 { font-size: 23px; }
+  .modal-form h2 { font-size: 20px; }
+  .summary h1 { font-size: 22px; }
+  .panel h2,
+  .projects-page h2 { font-size: 17px; }
+  .info-row,
+  .summary .row { font-size: 14px; }
+  .btn { font-size: 14px; }
+}
+
 /* product mockup with the portrait composited on top of the blank canvas */
 .mockup-stage { position: relative; width: 100%; }
 .mockup-stage .mockup-base { width: 100%; display: block; border-radius: 4px; }
