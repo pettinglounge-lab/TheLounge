@@ -77,6 +77,7 @@
 
     <dialog id="project-editor" class="project-editor custom-step" aria-labelledby="editor-title">
       <form id="editor-form">
+        <p class="eyebrow">STEP 1 OF 2</p>
         <h2 id="editor-title">Edit project</h2>
         <p class="modal-sub">Update your artwork description, then generate a new version from your original photo.</p>
         <label class="field-label" for="edit-prompt">Artwork description</label>
@@ -89,9 +90,27 @@
         <div class="project-actions">
           <button class="btn btn-outline btn-sm" id="edit-cancel" type="button">Cancel</button>
           <button class="btn btn-outline btn-sm" id="edit-save" type="submit">Save changes</button>
+          <button class="btn btn-outline btn-sm" id="edit-review" type="button" hidden>Review &amp; checkout</button>
           <button class="btn btn-primary btn-sm" id="edit-generate" type="button">Save &amp; generate</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="project-review" class="project-editor project-review" aria-labelledby="review-title">
+      <p class="eyebrow">STEP 2 OF 2</p>
+      <h2 id="review-title">Review your artwork</h2>
+      <p class="modal-sub">Take a look at the full image. Choose your product options next at checkout.</p>
+      <img id="review-image" class="review-image" alt="Your full generated artwork" />
+      <div id="review-message-wrap" hidden>
+        <h3>Inside card message</h3>
+        <p id="review-message" class="review-message"></p>
+      </div>
+      <p id="review-msg" class="msg" role="status"></p>
+      <div class="project-actions">
+        <button type="button" class="btn btn-outline btn-sm" id="review-close">Close</button>
+        <button type="button" class="btn btn-outline btn-sm" id="review-edit">Back to editing</button>
+        <button type="button" class="btn btn-primary btn-sm" id="review-checkout" disabled>Continue to checkout</button>
+      </div>
     </dialog>
 
     <!-- SAVED PROJECTS (signed-in only) -->
@@ -320,7 +339,7 @@
 
         const action = busy
           ? `<span class="badge">Rendering…</span>`
-          : `<button class="btn btn-outline btn-sm edit-project" data-id="${escapeHtml(r.id)}">Edit project</button>`;
+          : `<button class="btn btn-outline btn-sm edit-project" data-id="${escapeHtml(r.id)}">Edit project</button>${rendered ? `<button class="btn btn-primary btn-sm review-project" data-id="${escapeHtml(r.id)}">Review &amp; checkout</button>` : ""}`;
 
         return `
           <div class="project-card">
@@ -338,6 +357,7 @@
       }));
       box.innerHTML = cards.join("");
 
+      box.querySelectorAll(".review-project").forEach(btn => btn.addEventListener("click", () => openReview(btn.dataset.id)));
       box.querySelectorAll(".edit-project").forEach(btn => btn.addEventListener("click", () => openEditor(btn.dataset.id)));
       box.querySelectorAll(".project-delete").forEach(btn => btn.addEventListener("click", () => deleteProject(btn)));
     }
@@ -346,6 +366,7 @@
       const project = savedProjects.get(id);
       if (!project || pendingProjects.has(id) || project.status === "rendering") return;
       editingProject = project;
+      document.getElementById("edit-review").hidden = !project.render_path;
       editPrompt.value = project.config?.prompt || project.config?.note || "";
       editMessage.value = project.config?.inside_message || "";
       document.getElementById("edit-card-fields").hidden = project.config?.productType !== "greeting-card";
@@ -359,7 +380,9 @@
     document.getElementById("editor-form").addEventListener("submit", e => { e.preventDefault(); saveEdits(false); });
     editGenerate.addEventListener("click", () => saveEdits(true));
 
-    async function saveEdits(render) {
+    document.getElementById("edit-review").addEventListener("click", () => saveEdits(false, true));
+
+    async function saveEdits(render, reviewAfter = false) {
       if (!editingProject || editorBusy) return;
       if (render && !canAffordGeneration()) {
         editMsg.textContent = `You need ${GENERATION_COST} credits to generate. You can still save your changes.`;
@@ -387,6 +410,7 @@
           await loadSaved();
         }
         editor.close();
+        if (render || reviewAfter) openReview(project.id);
       } catch (e) {
         editMsg.textContent = "Unable to save: " + e.message;
       } finally {
@@ -395,23 +419,102 @@
       }
     }
 
+    const reviewDialog = document.getElementById("project-review");
+    const reviewImage = document.getElementById("review-image");
+    const reviewMsg = document.getElementById("review-msg");
+    const checkoutBtn = document.getElementById("review-checkout");
+    let reviewedProject = null;
+    let reviewedImageUrl = "";
+
+    function openReview(id) {
+      const project = savedProjects.get(id);
+      if (!project?.render_path || project.status === "rendering" || pendingProjects.has(id)) return;
+      reviewedProject = project;
+      reviewedImageUrl = supabase.storage.from("portrait-renders").getPublicUrl(project.render_path).data.publicUrl;
+      checkoutBtn.disabled = true;
+      reviewMsg.textContent = "Loading your artwork…";
+      reviewImage.onload = () => { checkoutBtn.disabled = false; reviewMsg.textContent = ""; };
+      reviewImage.onerror = () => { checkoutBtn.disabled = true; reviewMsg.textContent = "Your artwork could not load. Close this preview and try again."; };
+      reviewImage.src = reviewedImageUrl;
+      const message = project.config?.inside_message;
+      document.getElementById("review-message-wrap").hidden = project.config?.productType !== "greeting-card" || !message;
+      document.getElementById("review-message").textContent = message || "";
+      reviewDialog.showModal();
+    }
+
+    document.getElementById("review-close").addEventListener("click", () => reviewDialog.close());
+    document.getElementById("review-edit").addEventListener("click", () => {
+      reviewDialog.close();
+      if (reviewedProject) openEditor(reviewedProject.id);
+    });
+    checkoutBtn.addEventListener("click", () => {
+      if (!reviewedProject || checkoutBtn.disabled) return;
+      const config = reviewedProject.config || {};
+      if (!config.printify_product_id || !config.productType || !config.category) {
+        reviewMsg.textContent = "This project is missing product details. Please create a new project with a product selection.";
+        return;
+      }
+      try {
+        sessionStorage.setItem("ptl_order", JSON.stringify({
+          portraitId: reviewedProject.id,
+          category: config.category,
+          product_type: config.productType,
+          printify_product_id: config.printify_product_id,
+          title: config.product_title || CUSTOM_PRODUCT_TITLES[config.productType] || "Custom Portrait",
+          inside_message: config.inside_message || null,
+          photo_path: reviewedProject.photo_path,
+          render_path: reviewedProject.render_path,
+          prompt: config.prompt || config.note || null,
+        }));
+        sessionStorage.setItem("ptl_preview", reviewedImageUrl);
+        sessionStorage.removeItem("ptl_photo");
+        window.location.href = "checkout.html";
+      } catch (e) {
+        reviewMsg.textContent = "Unable to open checkout. Please allow browser storage and try again.";
+      }
+    });
+
+    const storageCleanupPending = new Map();
+
     async function deleteProject(btn) {
       const id = btn.dataset.id;
       if (pendingProjects.has(id) || !savedProjects.has(id)) return;
-      if (!confirm("Delete this project permanently? This cannot be undone.")) return;
+      if (!storageCleanupPending.has(id) && !confirm("Delete this project and its uploaded photo and generated artwork permanently? This cannot be undone.")) return;
       pendingProjects.add(id);
       const card = btn.closest(".project-card");
       card.querySelectorAll("button").forEach(el => el.disabled = true);
       try {
-        const { data, error } = await supabase.from("portraits").delete()
-          .eq("id", id).eq("user_id", session.user.id).neq("status", "rendering").select("id");
-        if (error) throw error;
-        if (data?.length !== 1) throw new Error("Deletion was not confirmed. The project may be rendering or your account may not have permission.");
+        if (!storageCleanupPending.has(id)) {
+          const { data, error } = await supabase.from("portraits").delete()
+            .eq("id", id).eq("user_id", session.user.id).neq("status", "rendering").select("id, photo_path, render_path");
+          if (error) throw error;
+          if (data?.length !== 1) throw new Error("Deletion was not confirmed. The project may be rendering or your account may not have permission.");
+          // Use paths returned by the deleted row, rather than potentially stale card data.
+          storageCleanupPending.set(id, [
+            { bucket: "pet-photos", path: data[0].photo_path },
+            { bucket: "portrait-renders", path: data[0].render_path },
+          ].filter(file => file.path));
+        }
+        const files = storageCleanupPending.get(id);
+        const results = await Promise.allSettled(files.map(async file => {
+          const { error } = await supabase.storage.from(file.bucket).remove([file.path]);
+          if (error) throw error;
+        }));
+        const failed = files.filter((file, index) => results[index].status === "rejected");
+        storageCleanupPending.set(id, failed);
+        if (failed.length) throw new Error("The project record was deleted, but some images could not be removed. Click the trash icon again to retry before leaving this page.");
+        storageCleanupPending.delete(id);
         savedProjects.delete(id);
         await loadSaved();
       } catch (e) {
-        alert("Could not delete project: " + e.message);
-        card.querySelectorAll("button").forEach(el => el.disabled = false);
+        alert((storageCleanupPending.has(id) ? "Storage cleanup incomplete: " : "Could not delete project: ") + e.message);
+        if (storageCleanupPending.has(id)) {
+          btn.disabled = false;
+          btn.title = "Retry image deletion";
+          btn.setAttribute("aria-label", "Retry image deletion");
+        } else {
+          card.querySelectorAll("button").forEach(el => el.disabled = false);
+        }
       } finally {
         pendingProjects.delete(id);
       }
