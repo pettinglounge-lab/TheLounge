@@ -471,7 +471,13 @@ a { color: inherit; }
 .product-tile:hover .pick, .product-tile:focus-visible .pick { opacity: 1; }
 
 @media (max-width: 900px) { .product-strip { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 540px) { .product-strip { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 540px) {
+  .product-strip {
+    display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 10px;
+    scroll-snap-type: x mandatory; scroll-padding-left: 16px; -webkit-overflow-scrolling: touch;
+  }
+  .product-tile { flex: 0 0 74vw; scroll-snap-align: start; border-radius: var(--radius); }
+}
 
 /* modal */
 .modal-overlay {
