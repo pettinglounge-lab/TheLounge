@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=custom-picker-v5" />
+  <link rel="stylesheet" href="style.css?v=custom-editor-v6" />
 </head>
 <body>
 
@@ -75,6 +75,25 @@
       </div>
     </div>
 
+    <dialog id="project-editor" class="project-editor custom-step" aria-labelledby="editor-title">
+      <form id="editor-form">
+        <h2 id="editor-title">Edit project</h2>
+        <p class="modal-sub">Update your artwork description, then generate a new version from your original photo.</p>
+        <label class="field-label" for="edit-prompt">Artwork description</label>
+        <textarea id="edit-prompt" placeholder="Describe the artwork you want."></textarea>
+        <div id="edit-card-fields" hidden>
+          <label class="field-label" for="edit-message">Inside card message</label>
+          <textarea id="edit-message" maxlength="400"></textarea>
+        </div>
+        <p class="msg" id="edit-msg" role="status"></p>
+        <div class="project-actions">
+          <button class="btn btn-outline btn-sm" id="edit-cancel" type="button">Cancel</button>
+          <button class="btn btn-outline btn-sm" id="edit-save" type="submit">Save changes</button>
+          <button class="btn btn-primary btn-sm" id="edit-generate" type="button">Save &amp; generate</button>
+        </div>
+      </form>
+    </dialog>
+
     <!-- SAVED PROJECTS (signed-in only) -->
     <section id="saved-section" style="display:none;">
       <h2>Saved</h2>
@@ -114,6 +133,17 @@
     const creditsNote = document.getElementById("credits-note");
     let selectedFile = null, selectedType = null, selectedCategory = null, selectedProduct = null;
 
+    let savedProjects = new Map();
+    let editingProject = null;
+    let editorBusy = false;
+    const pendingProjects = new Set();
+    const editor = document.getElementById("project-editor");
+    const editPrompt = document.getElementById("edit-prompt");
+    const editMessage = document.getElementById("edit-message");
+    const editMsg = document.getElementById("edit-msg");
+    const editGenerate = document.getElementById("edit-generate");
+    editGenerate.textContent = `Save & generate (${GENERATION_COST} credits)`;
+
     const PROMPT_EXAMPLES = {
       pet: "Describe the artwork you want, e.g. ‘soft floral background, warm colors, add the name Biscuit’",
       home: "Describe the artwork you want, e.g. ‘a cozy watercolor of this home in autumn, with warm porch lights and fall leaves’",
@@ -134,6 +164,7 @@
     loadCatalog();
 
     document.querySelectorAll(".custom-product").forEach(btn => btn.addEventListener("click", () => {
+      note.value = ""; createBtn.disabled = true; drop.classList.remove("has-file");
       selectedType = btn.dataset.type;
       selectedCategory = selectedProduct = null;
       selectedFile = null; fileIn.value = ""; fname.textContent = "";
@@ -225,7 +256,7 @@
 
         selectedFile = null; fileIn.value = ""; note.value = ""; cardMessage.value = "";
         drop.classList.remove("has-file"); fname.textContent = "";
-        activeMsg.textContent = "✓ Project created. Hit “Generate portrait” below to make the artwork.";
+        activeMsg.textContent = "✓ Project created. Choose “Edit project” below to review your details and generate artwork.";
         activeMsg.className = "msg ok";
         loadSaved();
         overlay.classList.remove("open");
@@ -258,15 +289,22 @@
       const { data: rows, error } = await supabase
         .from("portraits")
         .select("id, photo_path, render_path, config, status, created_at")
+        .eq("user_id", session.user.id)
         .order("created_at", { ascending: false });
 
-      if (error || !rows || rows.length === 0) {
+      if (error) {
+        box.innerHTML = `<div class="empty">Unable to load projects. Please refresh to try again.</div>`;
+        return;
+      }
+      savedProjects = new Map((rows || []).map(r => [r.id, r]));
+      if (!rows || rows.length === 0) {
         box.innerHTML = `<div class="empty">No projects yet — upload a photo above to start.</div>`;
         return;
       }
 
       const cards = await Promise.all(rows.map(async (r) => {
-        const rendered = r.status === "rendered" && r.render_path;
+        const rendered = !!r.render_path;
+        const busy = r.status === "rendering" || pendingProjects.has(r.id);
 
         // Show the rendered artwork if we have it, otherwise the uploaded photo.
         let imgUrl = "";
@@ -280,14 +318,9 @@
         const date = new Date(r.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
         const label = r.config?.note ? escapeHtml(r.config.note) : "Untitled";
 
-        let action;
-        if (rendered) {
-          action = `<button class="btn btn-outline btn-sm generate" data-id="${r.id}">Regenerate (${GENERATION_COST} credits)</button>`;
-        } else if (r.status === "rendering") {
-          action = `<span class="badge">rendering…</span>`;
-        } else {
-          action = `<button class="btn btn-primary btn-sm generate" data-id="${r.id}">Generate portrait (${GENERATION_COST} credits)</button>`;
-        }
+        const action = busy
+          ? `<span class="badge">Rendering…</span>`
+          : `<button class="btn btn-outline btn-sm edit-project" data-id="${escapeHtml(r.id)}">Edit project</button>`;
 
         return `
           <div class="project-card">
@@ -295,16 +328,93 @@
             <div class="body">
               <div class="note">${label}</div>
               <div class="meta"><span>${r.status}</span><span>${date}</span></div>
-              <div style="margin-top:10px;">${action}</div>
+              <div class="project-actions">${action}
+                <button type="button" class="project-delete" data-id="${escapeHtml(r.id)}" aria-label="Delete project" title="Delete project" ${busy ? "disabled" : ""}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" /></svg>
+                </button>
+              </div>
             </div>
           </div>`;
       }));
       box.innerHTML = cards.join("");
 
-      // wire the generate buttons
-      box.querySelectorAll(".generate").forEach((btn) => {
-        btn.addEventListener("click", () => generate(btn));
-      });
+      box.querySelectorAll(".edit-project").forEach(btn => btn.addEventListener("click", () => openEditor(btn.dataset.id)));
+      box.querySelectorAll(".project-delete").forEach(btn => btn.addEventListener("click", () => deleteProject(btn)));
+    }
+
+    function openEditor(id) {
+      const project = savedProjects.get(id);
+      if (!project || pendingProjects.has(id) || project.status === "rendering") return;
+      editingProject = project;
+      editPrompt.value = project.config?.prompt || project.config?.note || "";
+      editMessage.value = project.config?.inside_message || "";
+      document.getElementById("edit-card-fields").hidden = project.config?.productType !== "greeting-card";
+      editMsg.textContent = "Saving changes keeps your current image. Generate to apply your new description.";
+      editor.showModal();
+      editPrompt.focus();
+    }
+
+    document.getElementById("edit-cancel").addEventListener("click", () => { if (!editorBusy) editor.close(); });
+    editor.addEventListener("cancel", e => { if (editorBusy) e.preventDefault(); });
+    document.getElementById("editor-form").addEventListener("submit", e => { e.preventDefault(); saveEdits(false); });
+    editGenerate.addEventListener("click", () => saveEdits(true));
+
+    async function saveEdits(render) {
+      if (!editingProject || editorBusy) return;
+      if (render && !canAffordGeneration()) {
+        editMsg.textContent = `You need ${GENERATION_COST} credits to generate. You can still save your changes.`;
+        return;
+      }
+      const project = editingProject;
+      editorBusy = true;
+      editor.querySelectorAll("button, textarea").forEach(el => el.disabled = true);
+      editMsg.textContent = "Saving…";
+      try {
+        const config = { ...project.config, prompt: editPrompt.value.trim() || null, note: editPrompt.value.trim() || null };
+        if (config.productType === "greeting-card") config.inside_message = editMessage.value.trim() || null;
+        const { data, error } = await supabase.from("portraits").update({ config })
+          .eq("id", project.id).eq("user_id", session.user.id).neq("status", "rendering").select("id");
+        if (error) throw error;
+        if (data?.length !== 1) throw new Error("The project could not be updated. Refresh and try again.");
+        if (render) {
+          editMsg.textContent = "Creating your updated artwork…";
+          const generated = await generate({ dataset: { id: project.id }, disabled: false, textContent: "" });
+          if (!generated) {
+            editMsg.textContent = "Your changes were saved, but generation did not finish. Please try again.";
+            return;
+          }
+        } else {
+          await loadSaved();
+        }
+        editor.close();
+      } catch (e) {
+        editMsg.textContent = "Unable to save: " + e.message;
+      } finally {
+        editorBusy = false;
+        editor.querySelectorAll("button, textarea").forEach(el => el.disabled = false);
+      }
+    }
+
+    async function deleteProject(btn) {
+      const id = btn.dataset.id;
+      if (pendingProjects.has(id) || !savedProjects.has(id)) return;
+      if (!confirm("Delete this project permanently? This cannot be undone.")) return;
+      pendingProjects.add(id);
+      const card = btn.closest(".project-card");
+      card.querySelectorAll("button").forEach(el => el.disabled = true);
+      try {
+        const { data, error } = await supabase.from("portraits").delete()
+          .eq("id", id).eq("user_id", session.user.id).neq("status", "rendering").select("id");
+        if (error) throw error;
+        if (data?.length !== 1) throw new Error("Deletion was not confirmed. The project may be rendering or your account may not have permission.");
+        savedProjects.delete(id);
+        await loadSaved();
+      } catch (e) {
+        alert("Could not delete project: " + e.message);
+        card.querySelectorAll("button").forEach(el => el.disabled = false);
+      } finally {
+        pendingProjects.delete(id);
+      }
     }
 
     // ---- call the edge function to render ----
@@ -315,6 +425,9 @@
         return;
       }
       const portraitId = btn.dataset.id;
+      if (pendingProjects.has(portraitId)) return;
+      pendingProjects.add(portraitId);
+      document.querySelectorAll(`[data-id="${CSS.escape(portraitId)}"]`).forEach(el => el.disabled = true);
       btn.disabled = true;
       btn.textContent = "Rendering… (~15s)";
       try {
@@ -322,21 +435,39 @@
           body: { portraitId },
         });
         if (error) throw error;
+        if (data?.error) throw new Error(data.error);
         spendGenerationCredits();
-        loadSaved(); // refresh to show the finished artwork
+        return true;
       } catch (e) {
         alert("Render failed: " + (e.message || e));
-        loadSaved();
+        return false;
+      } finally {
+        pendingProjects.delete(portraitId);
+        await loadSaved();
       }
     }
 
     function escapeHtml(s) {
-      return s.replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     }
 
     if (isRealAccount) loadSaved();
   </script>
 
   <script type="module" src="Navbar.js"></script>
+  <footer class="footer">
+    <div class="container">
+      <a class="brand" href="index.html" aria-label="Petting Lounge home">Petting Lounge</a>
+      <nav>
+        <a href="pet.html">Pets</a>
+        <a href="home.html">Home</a>
+        <a href="memories.html">Memories</a>
+        <a href="custom.html">My Projects</a>
+        <a href="terms.html">Terms</a>
+      </nav>
+      <span class="muted">© 2026 Petting Lounge</span>
+    </div>
+  </footer>
+
 </body>
 </html>

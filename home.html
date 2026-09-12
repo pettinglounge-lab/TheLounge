@@ -51,6 +51,31 @@
   </div>
   <div id="rows"><div class="empty" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading products…</div></div>
 
+  <!-- HOW IT WORKS -->
+  <section class="steps">
+    <div class="container">
+      <h2>How it works</h2>
+      <p class="sub">Three simple steps.</p>
+      <div class="grid">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>Upload a favorite photo</h3>
+          <p>Choose a treasured photo of your home. Even older or imperfect photos work beautifully.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>Personalize it</h3>
+          <p>Choose a background, style, frame, and size, and add a name or a few special words.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>We create &amp; ship</h3>
+          <p>Our artists craft your keepsake with care and deliver it right to your door.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- FOOTER -->
   <footer class="footer">
     <div class="container">
@@ -120,7 +145,7 @@
     // Fixed gallery placeholders remain visible as new Home examples are added.
     const ROWS = [
       { type: "framed-poster", label: "Framed Art",    images: [1,2,3,4,5].map(n => `assets/homeframe${n}.png`) },
-      { type: "greeting-card", label: "Greeting Card", images: [1,2,3,4,5].map(n => `assets/homecard${n}.png`) },
+      { type: "greeting-card", label: "Greeting Card", images: [1,2,3,4,5].map(n => `assets/hcard${n}.png`) },
       { type: "poster",        label: "Rolled Poster", images: [1,2,3,4,5].map(n => `assets/homeposter${n}.png`) },
     ];
 
