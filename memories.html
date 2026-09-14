@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=compact-hero-v1" />
+  <link rel="stylesheet" href="style.css?v=artwork-preview-v2" />
 </head>
 <body>
 
@@ -60,13 +60,12 @@
   <div id="rows"><div class="empty" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading products…</div></div>
 
   <div class="modal-overlay" id="overlay">
-    <div class="modal">
+    <div class="modal artwork-modal">
       <button class="modal-close" id="close" aria-label="Close">×</button>
       <div class="modal-grid">
         <div class="modal-preview" id="mp-panel">
-          <div class="mockup-stage" id="stage">
-            <img class="mockup-base" id="mockup-base" src="" alt="Product mockup" />
-            <img class="mockup-art" id="mockup-art" src="" alt="Your portrait" />
+          <div class="artwork-stage" id="stage">
+            <img class="artwork-preview" id="artwork-preview" src="" alt="Your portrait" />
           </div>
           <div class="mp-loading" id="mp-loading" style="display:none;">
             <div class="spinner"></div>
@@ -155,13 +154,8 @@
       { type: "poster",        label: "Rolled Poster", images: [1, 2, 3, 4, 5].map(n => `assets/mposter${n}.png`) },
     ];
     let products = {}, selectedProduct, selectedImg, selectedFile, scaledDataUrl, previewUrl;
-    const rows = document.getElementById("rows"), overlay = document.getElementById("overlay"), mockupBase = document.getElementById("mockup-base"), mockupArt = document.getElementById("mockup-art"), mpLoad = document.getElementById("mp-loading"), styleSelect = document.getElementById("styleSelect"), drop = document.getElementById("drop"), fileIn = document.getElementById("file"), fname = document.getElementById("fname"), msg = document.getElementById("msg"), attempts = document.getElementById("attempts"), genBtn = document.getElementById("generate"), postgen = document.getElementById("postgen"), regenBtn = document.getElementById("regen"), continueBtn = document.getElementById("continue"), mTitle = document.getElementById("modal-title"), mSub = document.getElementById("modal-sub");
+    const rows = document.getElementById("rows"), overlay = document.getElementById("overlay"), artworkPreview = document.getElementById("artwork-preview"), mpLoad = document.getElementById("mp-loading"), styleSelect = document.getElementById("styleSelect"), drop = document.getElementById("drop"), fileIn = document.getElementById("file"), fname = document.getElementById("fname"), msg = document.getElementById("msg"), attempts = document.getElementById("attempts"), genBtn = document.getElementById("generate"), postgen = document.getElementById("postgen"), regenBtn = document.getElementById("regen"), continueBtn = document.getElementById("continue"), mTitle = document.getElementById("modal-title"), mSub = document.getElementById("modal-sub");
     styleSelect.innerHTML = STYLE_OPTIONS.map(style => `<option value="${style}">${style}</option>`).join("");
-    const MOCKUPS = {
-      "framed-poster": { file: "frameblack.png", opening: { top: "11%", left: "20%", width: "60%", height: "78%" } },
-      "greeting-card": { file: "card.png", opening: { top: "15%", left: "26%", width: "48%", height: "70%" } },
-      poster: { file: "poster.png", opening: { top: "17%", left: "30%", width: "40%", height: "68%" } },
-    };
     async function init() {
       const { data } = await supabase.from("products").select("*").eq("category", CATEGORY);
       (data || []).forEach(product => products[product.product_type] = product);
@@ -188,18 +182,12 @@
       openModal(product, tile.dataset.img);
       overlay.classList.add("open");
     });
-    function setMockup() {
-      const mockup = MOCKUPS[selectedProduct.product_type] || MOCKUPS.poster;
-      mockupBase.src = `assets/t/${mockup.file}`;
-      Object.assign(mockupArt.style, mockup.opening);
-    }
     function openModal(product, image) {
       selectedProduct = product;
       selectedImg = image;
       reset();
       mTitle.textContent = product.title || "Custom Memory Portrait";
       mSub.textContent = "Printed & shipped";
-      setMockup();
     }
     styleSelect.addEventListener("change", () => { selectedStyle = styleSelect.value; });
     function reset() {
@@ -208,7 +196,7 @@
       msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
       genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
       postgen.style.display = "none"; mpLoad.style.display = "none";
-      mockupBase.style.display = "none"; mockupArt.style.display = "none"; mockupArt.src = "";
+      artworkPreview.style.display = "none"; artworkPreview.src = "";
     }
     function closeModal() { overlay.classList.remove("open"); }
     document.getElementById("close").addEventListener("click", closeModal);
@@ -231,7 +219,7 @@
       drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
-      mockupBase.style.display = "none"; mockupArt.style.display = "none";
+      artworkPreview.style.display = "none";
       showCredits();
     }
     async function generate() {
@@ -249,9 +237,8 @@
         const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
         if (error) throw error;
         previewUrl = data.previewUrl;
-        mockupBase.style.display = "block";
-        mockupArt.src = previewUrl;
-        mockupArt.style.display = "block";
+        artworkPreview.src = previewUrl;
+        artworkPreview.style.display = "block";
         const balance = spendGenerationCredits();
         genBtn.style.display = "none"; postgen.style.display = "block";
         if (balance && balance.remaining >= GENERATION_COST) { regenBtn.style.display = "block"; regenBtn.disabled = false; regenBtn.textContent = `Regenerate (${GENERATION_COST} credits)`; }

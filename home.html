@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=compact-hero-v1" />
+  <link rel="stylesheet" href="style.css?v=artwork-preview-v2" />
 </head>
 <body>
 
@@ -93,13 +93,12 @@
 
   <!-- MODAL -->
   <div class="modal-overlay" id="overlay">
-    <div class="modal">
+    <div class="modal artwork-modal">
       <button class="modal-close" id="close" aria-label="Close">×</button>
       <div class="modal-grid">
         <div class="modal-preview" id="mp-panel">
-          <div class="mockup-stage" id="stage">
-            <img class="mockup-base" id="mockup-base" src="" alt="Product mockup" />
-            <img class="mockup-art" id="mockup-art" src="" alt="Your portrait" />
+          <div class="artwork-stage" id="stage">
+            <img class="artwork-preview" id="artwork-preview" src="" alt="Your portrait" />
           </div>
           <div class="mp-loading" id="mp-loading" style="display:none;">
             <div class="spinner"></div>
@@ -176,8 +175,7 @@
 
     // ---- refs ----
     const overlay  = document.getElementById("overlay");
-    const mockupBase = document.getElementById("mockup-base");
-    const mockupArt  = document.getElementById("mockup-art");
+    const artworkPreview  = document.getElementById("artwork-preview");
     const mpLoad   = document.getElementById("mp-loading");
     const styleSelect = document.getElementById("styleSelect");
     styleSelect.innerHTML = STYLE_OPTIONS.map(s => `<option value="${s}">${s}</option>`).join("");
@@ -209,31 +207,6 @@
       openModal(product, tile.dataset.img);
     });
 
-    // ── Product mockups (blank canvases). The portrait is layered on top, inside
-    //    the opening. TUNE the opening %s per product until it sits right. ──
-    // NOTE: if your files are in assets/t/product/, change MOCKUP_BASE below.
-    const MOCKUP_BASE = "assets/t/";
-    const MOCKUPS = {
-      "framed-poster": {
-        file: (color) => `frame${(color || "black").toLowerCase()}.png`,
-        opening: { top: "11%", left: "20%", width: "60%", height: "78%" },   // dialed in for the flat frame
-      },
-      "greeting-card": {
-        file: () => "card.png",
-        opening: { top: "15%", left: "26%", width: "48%", height: "70%" },   // front panel of the card
-      },
-      "poster": {
-        file: () => "poster.png",
-        opening: { top: "17%", left: "30%", width: "40%", height: "68%" },   // centered vertical print on the landscape poster
-      },
-    };
-
-    function setMockup() {
-      const m = MOCKUPS[selectedProduct.product_type] || MOCKUPS["poster"];
-      mockupBase.src = MOCKUP_BASE + m.file("black");
-      Object.assign(mockupArt.style, m.opening);   // position the portrait in the opening
-    }
-
     function openModal(product, img) {
       selectedProduct = product;
       selectedImg = img;
@@ -241,7 +214,6 @@
       mTitle.textContent = product.title || "Custom Home Portrait";
       mSub.textContent = "Printed & shipped";
 
-      setMockup();
       overlay.classList.add("open");
     }
     styleSelect.addEventListener("change", () => { selectedStyle = styleSelect.value; });
@@ -253,7 +225,7 @@
       msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
       genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
       postgen.style.display = "none"; mpLoad.style.display = "none";
-      mockupBase.style.display = "none"; mockupArt.style.display = "none"; mockupArt.src = "";
+      artworkPreview.style.display = "none"; artworkPreview.src = "";
     }
 
     function closeModal() { overlay.classList.remove("open"); }
@@ -274,7 +246,7 @@
       drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
-      mockupBase.style.display = "none"; mockupArt.style.display = "none";
+      artworkPreview.style.display = "none";
       showCredits();
     }
 
@@ -306,9 +278,8 @@
         if (error) throw error;
 
         previewUrl = data.previewUrl;
-        mockupBase.style.display = "block";
-        mockupArt.src = previewUrl;
-        mockupArt.style.display = "block";
+        artworkPreview.src = previewUrl;
+        artworkPreview.style.display = "block";
 
         const balance = spendGenerationCredits();
         genBtn.style.display = "none";

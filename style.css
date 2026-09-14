@@ -654,6 +654,17 @@ a { color: inherit; }
 }
 
 /* product mockup with the portrait composited on top of the blank canvas */
+.artwork-modal { max-width: 1200px; }
+.artwork-modal .modal-grid { grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); }
+.artwork-modal .modal-preview { padding: 12px; }
+.artwork-stage { width: 100%; }
+.artwork-preview { display: none; width: 100%; height: 72vh; object-fit: contain; }
+@media (max-width: 700px) {
+  .artwork-modal .modal-grid { grid-template-columns: 1fr; }
+  .artwork-modal .modal-preview { max-height: none; }
+  .artwork-preview { height: 46vh; }
+}
+
 .mockup-stage { position: relative; width: 100%; }
 .mockup-stage .mockup-base { width: 100%; display: block; border-radius: 4px; }
 .mockup-stage .mockup-art {
