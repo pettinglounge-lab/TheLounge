@@ -555,6 +555,11 @@ a { color: inherit; }
 }
 .preview-panel img { max-width: 100%; border-radius: 8px; box-shadow: var(--shadow); }
 .preview-panel .mockup-stage img { box-shadow: none; }
+.preview-panel .checkout-mockup .mockup-art {
+  border-radius: 0;
+  object-fit: cover;
+  object-position: center;
+}
 .preview-panel .mockup-base { border-radius: 8px; box-shadow: var(--shadow); }
 .preview-loading { text-align: center; color: var(--ink-soft); font-size: 14px; }
 .spinner {
