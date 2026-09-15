@@ -141,14 +141,14 @@
     await initializeCreditProfile();
 
     const CATEGORY = "pet";
-    const STYLE_OPTIONS = ["White Background", "Royal Renaissance", "Floral", "Princess"];
+    const STYLE_OPTIONS = ["White Background", "Royal Renaissance", "Floral", "Princess", "Dark Dramatic"];
 
     // Curated example imagery for the product gallery. Product availability and
     // variants still come live from Supabase when a tile is selected.
     const ROWS = [
       { type: "framed-poster", label: "Framed Art",    images: [1,2,3,4,5].map(n => `assets/dogframe${n}.png`) },
       { type: "greeting-card", label: "Greeting Card", images: [1,2,3,4,5].map(n => `assets/card${n}.png`) },
-      { type: "poster",        label: "Rolled Poster", images: [1,2,3,4,5].map(n => `assets/poster${n}.png`) },
+      { type: "poster",        label: "Rolled Poster", images: [1,2,3,4,5].map(n => `assets/ppet${n}.png`) },
     ];
 
     let productsByType = {};   // product_type -> product row from DB
