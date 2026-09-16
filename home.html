@@ -134,7 +134,9 @@
 
   <script type="module">
     import { supabase } from "./supabaseClient.js";
-    import { GENERATION_COST, canAffordGeneration, creditBalanceText, dailyCreditAllowance, getDailyCredits, initializeCreditProfile, spendGenerationCredits } from "./credits.js";
+    import { GENERATION_COST, canAffordGeneration, creditBalanceText, dailyCreditAllowance, getDailyCredits, initializeCreditProfile, creditStatusText } from "./credits.js";
+
+    import { generatePreview } from "./preview-request.js";
 
     await initializeCreditProfile();
 
@@ -252,17 +254,15 @@
 
     // ---- shared daily credits ----
     function showCredits() {
-      const { remaining } = getDailyCredits();
-      attempts.textContent = remaining >= GENERATION_COST
-        ? `${creditBalanceText()} · ${GENERATION_COST} credits per generation`
-        : `No credits remaining today. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`;
+      attempts.textContent = creditStatusText();
     }
+
+    window.addEventListener("credits-changed", showCredits);
 
     // ---- generate ----
     async function generate() {
       msg.textContent = ""; msg.className = "msg";
       if (!selectedFile) { msg.textContent = "Please upload a photo first."; msg.className = "msg err"; return; }
-      if (!canAffordGeneration()) { msg.textContent = `You need ${GENERATION_COST} credits to generate. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`; msg.className = "msg err"; showCredits(); return; }
 
       setLoading(true);
       try {
@@ -274,14 +274,13 @@
         fd.append("style", selectedStyle);
         fd.append("note", "");   // name is NOT baked into the image — it's overlaid on the frame later
 
-        const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
-        if (error) throw error;
+        const data = await generatePreview(fd);
 
         previewUrl = data.previewUrl;
         artworkPreview.src = previewUrl;
         artworkPreview.style.display = "block";
 
-        const balance = spendGenerationCredits();
+        const balance = getDailyCredits();
         genBtn.style.display = "none";
         postgen.style.display = "block";
         if (balance && balance.remaining >= GENERATION_COST) { regenBtn.style.display = "block"; regenBtn.disabled = false; regenBtn.textContent = `Regenerate (${GENERATION_COST} credits)`; }

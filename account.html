@@ -55,7 +55,7 @@
 
     <!-- BOTTOM ACTIONS -->
     <div class="account-actions bottom">
-      <a class="btn btn-outline" href="mailto:support@pettinglounge.com?subject=Support%20request">Contact support</a>
+      <a class="btn btn-outline" href="mailto:PettingLounge@gmail.com?subject=Support%20request">Contact support</a>
       <a class="btn btn-outline" href="terms.html">Terms of Service</a>
       <button class="btn btn-outline" id="logout">Log out</button>
     </div>
@@ -73,7 +73,7 @@
     if (!session || session.user.is_anonymous === true) {
       window.location.href = "login.html";
     } else {
-      configureCreditProfile(session.user);
+      await configureCreditProfile(session.user);
       showAccount(session.user);
       showCreditBalance();
       loadOrders();
@@ -88,13 +88,18 @@
     }
 
     function showCreditBalance() {
-      const { remaining } = getDailyCredits();
+      const { remaining, free, purchased, unavailable } = getDailyCredits();
+      if (unavailable) {
+        document.getElementById("credit-balance").textContent = "Unavailable";
+        document.getElementById("credit-summary").textContent = "Unable to load credits. Refresh to try again.";
+        return;
+      }
       const generations = Math.floor(remaining / GENERATION_COST);
       document.getElementById("credit-balance").textContent = `${remaining} credits`;
       document.getElementById("credit-summary").textContent =
-        `${generations} generation${generations === 1 ? "" : "s"} available today. Signed-in members receive ${dailyCreditAllowance()} credits (5 generations) each day.`;
+        `${free} daily credits + ${purchased} purchased credits · ${generations} generation${generations === 1 ? "" : "s"} available. Free credits reset daily at midnight Chicago time; purchased credits carry over.`;
     }
-    window.addEventListener("storage", showCreditBalance);
+    window.addEventListener("credits-changed", showCreditBalance);
 
     // 2. Orders (RLS returns only this user's rows).
     async function loadOrders() {

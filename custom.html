@@ -122,10 +122,10 @@
 
   <script type="module">
     import { supabase } from "./supabaseClient.js";
-    import { GENERATION_COST, canAffordGeneration, configureCreditProfile, creditBalanceText, dailyCreditAllowance, getDailyCredits, spendGenerationCredits } from "./credits.js";
+    import { GENERATION_COST, canAffordGeneration, configureCreditProfile, creditBalanceText, dailyCreditAllowance, getDailyCredits, refreshCredits, creditStatusText } from "./credits.js";
 
     const { data: { session } } = await supabase.auth.getSession();
-    configureCreditProfile(session?.user);
+    await configureCreditProfile(session?.user);
     // My Projects is the one account-only area — send guests to sign up.
     if (!session || session.user.is_anonymous === true) {
       window.location.href = "signup.html";
@@ -292,11 +292,10 @@
 
     // ---- saved projects ----
     function showCredits() {
-      const { remaining } = getDailyCredits();
-      creditsNote.textContent = remaining >= GENERATION_COST
-        ? `${creditBalanceText()} · ${GENERATION_COST} credits per generation`
-        : `No credits remaining today. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`;
+      creditsNote.textContent = creditStatusText();
     }
+
+    window.addEventListener("credits-changed", showCredits);
 
     async function loadSaved() {
       const section = document.getElementById("saved-section");
@@ -384,7 +383,7 @@
 
     async function saveEdits(render, reviewAfter = false) {
       if (!editingProject || editorBusy) return;
-      if (render && !canAffordGeneration()) {
+      if (render && !sessionStorage.getItem(`ptl_custom_attempt:${session.user.id}:${editingProject.id}`) && !canAffordGeneration()) {
         editMsg.textContent = `You need ${GENERATION_COST} credits to generate. You can still save your changes.`;
         return;
       }
@@ -399,6 +398,7 @@
           .eq("id", project.id).eq("user_id", session.user.id).neq("status", "rendering").select("id");
         if (error) throw error;
         if (data?.length !== 1) throw new Error("The project could not be updated. Refresh and try again.");
+        project.config = config;
         if (render) {
           editMsg.textContent = "Creating your updated artwork…";
           const generated = await generate({ dataset: { id: project.id }, disabled: false, textContent: "" });
@@ -522,11 +522,6 @@
 
     // ---- call the edge function to render ----
     async function generate(btn) {
-      if (!canAffordGeneration()) {
-        alert(`You need ${GENERATION_COST} credits to generate. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`);
-        showCredits();
-        return;
-      }
       const portraitId = btn.dataset.id;
       if (pendingProjects.has(portraitId)) return;
       pendingProjects.add(portraitId);
@@ -534,18 +529,36 @@
       btn.disabled = true;
       btn.textContent = "Rendering… (~15s)";
       try {
-        const { data, error } = await supabase.functions.invoke("render-portrait", {
-          body: { portraitId },
+        const project = editingProject?.id === portraitId ? editingProject : savedProjects.get(portraitId);
+        const key = `ptl_custom_attempt:${session.user.id}:${portraitId}`;
+        const signature = JSON.stringify([project?.photo_path, project?.config]);
+        let prior;
+        try { prior = JSON.parse(sessionStorage.getItem(key)); } catch {}
+        const retry = prior?.signature === signature;
+        await refreshCredits();
+        if (!retry && !canAffordGeneration()) throw new Error("You need 10 available credits to generate.");
+        const requestId = retry ? prior.requestId : crypto.randomUUID();
+        sessionStorage.setItem(key, JSON.stringify({ requestId, signature }));
+        const { data, error } = await supabase.functions.invoke("custom-portrait", {
+          body: { portraitId, requestId },
         });
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        spendGenerationCredits();
+        let response = data;
+        if (error?.context?.json) {
+          try { response = await error.context.json(); } catch {}
+        }
+        if (error || response?.error) {
+          if (response?.creditStatus === "refunded" || ["insufficient_credits", "request_refunded", "invalid_session", "invalid_note", "invalid_style", "invalid_image"].includes(response?.code)) sessionStorage.removeItem(key);
+          throw new Error(response?.error || "Connection interrupted. Retry to recover the same attempt.");
+        }
+        sessionStorage.removeItem(key);
+        await refreshCredits();
         return true;
       } catch (e) {
         alert("Render failed: " + (e.message || e));
         return false;
       } finally {
         pendingProjects.delete(portraitId);
+        await refreshCredits();
         await loadSaved();
       }
     }

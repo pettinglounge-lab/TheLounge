@@ -141,7 +141,9 @@
 
   <script type="module">
     import { supabase } from "./supabaseClient.js";
-    import { GENERATION_COST, canAffordGeneration, creditBalanceText, dailyCreditAllowance, getDailyCredits, initializeCreditProfile, spendGenerationCredits } from "./credits.js";
+    import { GENERATION_COST, canAffordGeneration, creditBalanceText, dailyCreditAllowance, getDailyCredits, initializeCreditProfile, creditStatusText } from "./credits.js";
+    import { generatePreview } from "./preview-request.js";
+
     await initializeCreditProfile();
     const CATEGORY = "memory";
     const STYLE_OPTIONS = ["Memory"];
@@ -208,10 +210,7 @@
     drop.addEventListener("drop", event => { if (event.dataTransfer.files[0]) pick(event.dataTransfer.files[0]); });
     fileIn.addEventListener("change", event => { if (event.target.files[0]) pick(event.target.files[0]); });
     function showCredits() {
-      const { remaining } = getDailyCredits();
-      attempts.textContent = remaining >= GENERATION_COST
-        ? `${creditBalanceText()} · ${GENERATION_COST} credits per generation`
-        : `No credits remaining today. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`;
+      attempts.textContent = creditStatusText();
     }
     function pick(file) {
       if (!file.type.startsWith("image/")) { alert("Please choose an image file."); return; }
@@ -222,10 +221,10 @@
       artworkPreview.style.display = "none";
       showCredits();
     }
+    window.addEventListener("credits-changed", showCredits);
     async function generate() {
       msg.textContent = ""; msg.className = "msg";
       if (!selectedFile) { msg.textContent = "Please upload a photo first."; msg.className = "msg err"; return; }
-      if (!canAffordGeneration()) { msg.textContent = `You need ${GENERATION_COST} credits to generate. Your ${dailyCreditAllowance()} daily credits reset tomorrow.`; msg.className = "msg err"; showCredits(); return; }
       setLoading(true);
       try {
         if (!scaledDataUrl) scaledDataUrl = await scale(selectedFile);
@@ -234,12 +233,11 @@
         fd.append("productType", CATEGORY);
         fd.append("style", selectedStyle);
         fd.append("note", "");
-        const { data, error } = await supabase.functions.invoke("preview-portrait", { body: fd });
-        if (error) throw error;
+        const data = await generatePreview(fd);
         previewUrl = data.previewUrl;
         artworkPreview.src = previewUrl;
         artworkPreview.style.display = "block";
-        const balance = spendGenerationCredits();
+        const balance = getDailyCredits();
         genBtn.style.display = "none"; postgen.style.display = "block";
         if (balance && balance.remaining >= GENERATION_COST) { regenBtn.style.display = "block"; regenBtn.disabled = false; regenBtn.textContent = `Regenerate (${GENERATION_COST} credits)`; }
         else { regenBtn.style.display = "none"; }
