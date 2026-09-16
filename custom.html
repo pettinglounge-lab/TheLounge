@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=custom-editor-v6" />
+  <link rel="stylesheet" href="style.css?v=custom-editor-v7" />
 </head>
 <body>
 
@@ -80,6 +80,11 @@
         <p class="eyebrow">STEP 1 OF 2</p>
         <h2 id="editor-title">Edit project</h2>
         <p class="modal-sub">Update your artwork description, then generate a new version from your original photo.</p>
+        <p class="custom-credit-status" id="editor-credits" aria-live="polite"></p>
+        <div id="edit-preview" hidden>
+          <img id="edit-image" class="review-image" alt="Your generated custom artwork" />
+          <p id="edit-image-msg" class="msg" role="status"></p>
+        </div>
         <label class="field-label" for="edit-prompt">Artwork description</label>
         <textarea id="edit-prompt" placeholder="Describe the artwork you want."></textarea>
         <div id="edit-card-fields" hidden>
@@ -88,9 +93,9 @@
         </div>
         <p class="msg" id="edit-msg" role="status"></p>
         <div class="project-actions">
-          <button class="btn btn-outline btn-sm" id="edit-cancel" type="button">Cancel</button>
+          <button class="btn btn-outline btn-sm" id="edit-cancel" type="button">Close</button>
           <button class="btn btn-outline btn-sm" id="edit-save" type="submit">Save changes</button>
-          <button class="btn btn-outline btn-sm" id="edit-review" type="button" hidden>Review &amp; checkout</button>
+          <button class="btn btn-outline btn-sm" id="edit-review" type="button" hidden>Continue to checkout</button>
           <button class="btn btn-primary btn-sm" id="edit-generate" type="button">Save &amp; generate</button>
         </div>
       </form>
@@ -293,6 +298,7 @@
     // ---- saved projects ----
     function showCredits() {
       creditsNote.textContent = creditStatusText();
+      document.getElementById("editor-credits").textContent = creditStatusText();
     }
 
     window.addEventListener("credits-changed", showCredits);
@@ -361,11 +367,40 @@
       box.querySelectorAll(".project-delete").forEach(btn => btn.addEventListener("click", () => deleteProject(btn)));
     }
 
+    let editorImageReady = false;
+    function showEditorArtwork(project) {
+      const image = document.getElementById("edit-image");
+      const message = document.getElementById("edit-image-msg");
+      const checkout = document.getElementById("edit-review");
+      editorImageReady = false;
+      checkout.hidden = !project.render_path;
+      checkout.disabled = true;
+      document.getElementById("edit-preview").hidden = !project.render_path;
+      image.onload = null;
+      image.onerror = null;
+      image.removeAttribute("src");
+      if (!project.render_path) return;
+      message.textContent = "Loading your artwork…";
+      image.onload = () => {
+        editorImageReady = true;
+        checkout.disabled = editorBusy;
+        message.textContent = "";
+      };
+      image.onerror = () => {
+        editorImageReady = false;
+        checkout.disabled = true;
+        message.textContent = "Your artwork could not load. Close and reopen this project to try again.";
+      };
+      image.src = supabase.storage.from("portrait-renders").getPublicUrl(project.render_path).data.publicUrl;
+    }
+
     function openEditor(id) {
       const project = savedProjects.get(id);
       if (!project || pendingProjects.has(id) || project.status === "rendering") return;
       editingProject = project;
-      document.getElementById("edit-review").hidden = !project.render_path;
+      editGenerate.textContent = project.render_path ? `Generate again (${GENERATION_COST} credits)` : `Save & generate (${GENERATION_COST} credits)`;
+      showEditorArtwork(project);
+      showCredits();
       editPrompt.value = project.config?.prompt || project.config?.note || "";
       editMessage.value = project.config?.inside_message || "";
       document.getElementById("edit-card-fields").hidden = project.config?.productType !== "greeting-card";
@@ -409,13 +444,23 @@
         } else {
           await loadSaved();
         }
-        editor.close();
-        if (render || reviewAfter) openReview(project.id);
+        editingProject = savedProjects.get(project.id) || project;
+        if (render) {
+          showEditorArtwork(editingProject);
+          editGenerate.textContent = `Generate again (${GENERATION_COST} credits)`;
+          editMsg.textContent = "Your artwork is saved. Edit your description and generate again, or continue to checkout.";
+        } else {
+          editMsg.textContent = "Changes saved. Generate again to apply description changes to the image.";
+        }
+        if (reviewAfter && editorImageReady) {
+          startCheckout(editingProject, document.getElementById("edit-image").src, editMsg);
+        }
       } catch (e) {
         editMsg.textContent = "Unable to save: " + e.message;
       } finally {
         editorBusy = false;
         editor.querySelectorAll("button, textarea").forEach(el => el.disabled = false);
+        document.getElementById("edit-review").disabled = !editorImageReady;
       }
     }
 
@@ -449,30 +494,34 @@
     });
     checkoutBtn.addEventListener("click", () => {
       if (!reviewedProject || checkoutBtn.disabled) return;
-      const config = reviewedProject.config || {};
+      startCheckout(reviewedProject, reviewedImageUrl, reviewMsg);
+    });
+
+    function startCheckout(project, imageUrl, message) {
+      const config = project.config || {};
       if (!config.printify_product_id || !config.productType || !config.category) {
-        reviewMsg.textContent = "This project is missing product details. Please create a new project with a product selection.";
+        message.textContent = "This project is missing product details. Please create a new project with a product selection.";
         return;
       }
       try {
         sessionStorage.setItem("ptl_order", JSON.stringify({
-          portraitId: reviewedProject.id,
+          portraitId: project.id,
           category: config.category,
           product_type: config.productType,
           printify_product_id: config.printify_product_id,
           title: config.product_title || CUSTOM_PRODUCT_TITLES[config.productType] || "Custom Portrait",
           inside_message: config.inside_message || null,
-          photo_path: reviewedProject.photo_path,
-          render_path: reviewedProject.render_path,
+          photo_path: project.photo_path,
+          render_path: project.render_path,
           prompt: config.prompt || config.note || null,
         }));
-        sessionStorage.setItem("ptl_preview", reviewedImageUrl);
+        sessionStorage.setItem("ptl_preview", imageUrl);
         sessionStorage.removeItem("ptl_photo");
         window.location.href = "checkout.html";
       } catch (e) {
-        reviewMsg.textContent = "Unable to open checkout. Please allow browser storage and try again.";
+        message.textContent = "Unable to open checkout. Please allow browser storage and try again.";
       }
-    });
+    }
 
     const storageCleanupPending = new Map();
 
