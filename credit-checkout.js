@@ -12,6 +12,10 @@ if (session?.user.is_anonymous === false &&
   panel.hidden = false;
   const key = 'ptl_credit_checkout:' + session.user.id;
   let busy = false;
+  // Back from Stripe may restore the disabled page from the browser cache.
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) location.reload();
+  });
   buttons.forEach(button => button.addEventListener('click', async () => {
     if (busy) return;
     busy = true;
@@ -24,9 +28,26 @@ if (session?.user.is_anonymous === false &&
       const attempt = prior?.packageId === packageId && Date.now() - prior.created < 1800000
         ? prior : { packageId, requestId: crypto.randomUUID(), created: Date.now() };
       sessionStorage.setItem(key, JSON.stringify(attempt));
-      const { data, error } = await supabase.functions.invoke('create-credit-checkout', {
-        body: { packageId, requestId: attempt.requestId },
+      const controller = new AbortController();
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error('Checkout took too long. Please try again; your existing checkout attempt will be reused.'));
+          controller.abort();
+        }, 45000);
       });
+      let result;
+      try {
+        result = await Promise.race([
+          supabase.functions.invoke('create-credit-checkout', {
+            body: { packageId, requestId: attempt.requestId },
+            signal: controller.signal,
+          }), timeout,
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
+      const { data, error } = result;
       if (error || data?.error) {
         let detail = data;
         try { detail = await error.context.json(); } catch {}

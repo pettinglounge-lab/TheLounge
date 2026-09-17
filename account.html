@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=credit-layout-1" />
 </head>
 <body>
 
@@ -42,17 +42,17 @@
         <span class="label">Current balance</span>
         <span class="value" id="credit-balance">—</span>
       </div>
-      <p class="credit-summary" id="credit-summary"></p>
       <div id="credit-reload" hidden>
         <h3>Test credit reload</h3>
         <p>Sandbox only — no real payment. Each artwork generation uses 10 credits.</p>
-        <div class="project-actions">
+        <div class="credit-packages">
           <button type="button" class="btn btn-outline" data-credit-package="100">100 credits · $4.99 USD</button>
           <button type="button" class="btn btn-outline" data-credit-package="250">250 credits · $9.99 USD</button>
           <button type="button" class="btn btn-outline" data-credit-package="500">500 credits · $17.99 USD</button>
         </div>
         <p id="credit-payment-msg" class="msg" role="status" aria-live="polite"></p>
       </div>
+      <p class="credit-summary" id="credit-summary"></p>
     </section>
 
     <!-- ORDERS -->

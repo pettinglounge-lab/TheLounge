@@ -273,6 +273,10 @@ a { color: inherit; }
 }
 .panel h2 { font-size: 18px; margin-bottom: 18px; }
 .credit-summary { margin: 14px 0 0; color: var(--ink-soft); font-size: 14px; line-height: 1.45; }
+#credit-balance { color: var(--accent); font-weight: 700; }
+#credit-reload { margin-top: 18px; }
+.credit-packages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.credit-packages .btn { min-width: 0; padding: 12px 8px; font-size: 14px; text-align: center; white-space: normal; }
 
 .info-row {
   display: flex; justify-content: space-between; gap: 16px;
