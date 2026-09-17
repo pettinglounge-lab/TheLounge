@@ -89,6 +89,11 @@ if (session?.user.is_anonymous === false &&
           else await new Promise(resolve => setTimeout(resolve, 2000));
         }
         if (confirmed) {
+          const cleanUrl = new URL(location.href);
+          cleanUrl.searchParams.delete('credit_payment');
+          cleanUrl.searchParams.delete('session_id');
+          cleanUrl.searchParams.set('credits_test', '1');
+          history.replaceState(history.state, '', cleanUrl.href);
           busy = false;
           buttons.forEach(b => b.disabled = false);
         }
