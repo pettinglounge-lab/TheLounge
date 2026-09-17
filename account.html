@@ -43,8 +43,8 @@
         <span class="value" id="credit-balance">—</span>
       </div>
       <div id="credit-reload" hidden>
-        <h3>Test credit reload</h3>
-        <p>Sandbox only — no real payment. Each artwork generation uses 10 credits.</p>
+        <h3>Buy credits</h3>
+        <p>Each artwork generation uses 10 credits. Purchased credits carry over.</p>
         <div class="credit-packages">
           <button type="button" class="btn btn-outline" data-credit-package="100">100 credits · $4.99 USD</button>
           <button type="button" class="btn btn-outline" data-credit-package="250">250 credits · $9.99 USD</button>
@@ -107,7 +107,7 @@
       const generations = Math.floor(remaining / GENERATION_COST);
       document.getElementById("credit-balance").textContent = `${remaining} credits`;
       document.getElementById("credit-summary").textContent =
-        `${free} daily credits + ${purchased} purchased credits · ${generations} generation${generations === 1 ? "" : "s"} available. Free credits reset daily at midnight Chicago time; purchased credits carry over.`;
+        `${free} daily credits + ${purchased} purchased credits · ${generations} generation${generations === 1 ? "" : "s"} available. Free credits reset daily at midnight Central time; purchased credits carry over.`;
     }
     window.addEventListener("credits-changed", showCreditBalance);
 
@@ -165,7 +165,7 @@
   </script>
 
   <!-- navbar -->
-  <script type="module" src="credit-checkout.js"></script>
+  <script type="module" src="credit-checkout.js?v=live-1"></script>
   <script type="module" src="Navbar.js"></script>
   <footer class="footer">
     <div class="container">

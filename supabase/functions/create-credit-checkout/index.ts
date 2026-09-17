@@ -1,11 +1,11 @@
 // Deploy with gateway Verify JWT OFF. Customer authentication is checked here.
-// Sandbox-only until live prices and the payment webhook are configured.
+// Live checkout: requires live Stripe credentials and prices.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const PACKAGES = {
-  "100": { price: "price_1UGSVxJjLQheprQIouysm85r", amount: 499 },
-  "250": { price: "price_1UGSWVJjLQheprQIBHse76X9", amount: 999 },
-  "500": { price: "price_1UGSWwJjLQheprQIorXQ8W5W", amount: 1799 },
+  "100": { price: "price_1UGoKfJFj8lbKHzEKSFcFM4c", amount: 499 },
+  "250": { price: "price_1UGoKlJFj8lbKHzEPA81SwV6", amount: 999 },
+  "500": { price: "price_1UGoKoJFj8lbKHzEWPisGvQf", amount: 1799 },
 };
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -23,8 +23,8 @@ export async function handler(req: Request) {
     const url = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!url || !serviceKey || !stripeKey?.startsWith("sk_test_")) {
-      return json(503, { error: "Sandbox checkout is not configured." });
+    if (!url || !serviceKey || !stripeKey?.startsWith("sk_live_")) {
+      return json(503, { error: "Live checkout is not configured." });
     }
     const token = req.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
     if (!token) return json(401, { error: "Sign in to purchase credits." });
@@ -33,9 +33,6 @@ export async function handler(req: Request) {
     if (error || !data.user || data.user.is_anonymous !== false) {
       return json(401, { error: "Sign in to purchase credits." });
     }
-    // Until launch, only explicitly listed accounts can create test purchases.
-    const testers = (Deno.env.get("STRIPE_TEST_USER_IDS") || "").split(",").map(s => s.trim());
-    if (!testers.includes(data.user.id)) return json(403, { error: "Credit purchases are not available yet." });
     let input;
     try { input = await req.json(); } catch { return json(400, { error: "Invalid request." }); }
     const packageId = String(input?.packageId || "");
@@ -50,7 +47,7 @@ export async function handler(req: Request) {
       headers, signal: AbortSignal.timeout(15000),
     });
     const price = await priceResponse.json();
-    if (!priceResponse.ok || !price.active || price.livemode !== false ||
+    if (!priceResponse.ok || !price.active || price.livemode !== true ||
       price.type !== "one_time" || price.currency !== "usd" || price.unit_amount !== pack.amount) {
       return json(503, { error: "This credit package is not configured correctly." });
     }

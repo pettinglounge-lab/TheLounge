@@ -1,12 +1,12 @@
 // Deploy with Verify JWT OFF. Stripe authenticates with Stripe-Signature.
-// Sandbox-only; grants test credits only to STRIPE_TEST_USER_IDS accounts.
+// Live payments only. Sandbox events cannot grant credits.
 import Stripe from "npm:stripe@18.3.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const PACKAGES = {
-  "price_1UGSVxJjLQheprQIouysm85r": { credits: 100, amount: 499 },
-  "price_1UGSWVJjLQheprQIBHse76X9": { credits: 250, amount: 999 },
-  "price_1UGSWwJjLQheprQIorXQ8W5W": { credits: 500, amount: 1799 },
+  "price_1UGoKfJFj8lbKHzEKSFcFM4c": { credits: 100, amount: 499 },
+  "price_1UGoKlJFj8lbKHzEPA81SwV6": { credits: 250, amount: 999 },
+  "price_1UGoKoJFj8lbKHzEWPisGvQf": { credits: 500, amount: 1799 },
 };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), {
   status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -18,7 +18,7 @@ export async function handler(req: Request) {
   const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!key?.startsWith("sk_test_") || !secret || !url || !serviceKey) {
+  if (!key?.startsWith("sk_live_") || !secret || !url || !serviceKey) {
     return json(503, { error: "Webhook is not configured." });
   }
   const signature = req.headers.get("stripe-signature");
@@ -35,7 +35,7 @@ export async function handler(req: Request) {
   if (!["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
     return json(200, { received: true, ignored: true });
   }
-  if (event.livemode) return json(400, { error: "Expected a sandbox event." });
+  if (event.livemode !== true) return json(400, { error: "Expected a live event." });
   try {
     const eventSession = event.data.object as Stripe.Checkout.Session;
     // Retrieve current payment details directly from Stripe before granting.
@@ -45,9 +45,8 @@ export async function handler(req: Request) {
     }
     if (session.payment_status !== "paid") return json(200, { received: true, pending: true });
     const userId = session.client_reference_id;
-    const testers = (Deno.env.get("STRIPE_TEST_USER_IDS") || "").split(",").map(s => s.trim());
-    if (session.livemode || session.mode !== "payment" || session.status !== "complete" ||
-      !userId || session.metadata.user_id !== userId || !testers.includes(userId)) {
+    if (session.livemode !== true || session.mode !== "payment" || session.status !== "complete" ||
+      !userId || session.metadata.user_id !== userId) {
       throw new Error("Invalid purchase owner or mode");
     }
     const items = await stripe.checkout.sessions.listLineItems(session.id, { limit: 2 });

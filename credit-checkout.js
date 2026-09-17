@@ -6,11 +6,10 @@ const message = document.getElementById('credit-payment-msg');
 const buttons = [...panel.querySelectorAll('[data-credit-package]')];
 const params = new URLSearchParams(location.search);
 const { data: { session } } = await supabase.auth.getSession();
-// Sandbox controls are opt-in; the backend separately enforces its tester list.
-if (session?.user.is_anonymous === false &&
-    (params.get('credits_test') === '1' || params.has('credit_payment'))) {
+// Credit purchases are available to signed-in permanent accounts.
+if (session?.user.is_anonymous === false) {
   panel.hidden = false;
-  const key = 'ptl_credit_checkout:' + session.user.id;
+  const key = 'ptl_credit_checkout_live:' + session.user.id;
   let busy = false;
   // Back from Stripe may restore the disabled page from the browser cache.
   window.addEventListener('pageshow', event => {
@@ -20,7 +19,7 @@ if (session?.user.is_anonymous === false &&
     if (busy) return;
     busy = true;
     buttons.forEach(b => b.disabled = true);
-    message.textContent = 'Opening secure test checkout…';
+    message.textContent = 'Opening secure checkout…';
     try {
       const packageId = button.dataset.creditPackage;
       let prior;
@@ -69,8 +68,8 @@ if (session?.user.is_anonymous === false &&
       message.textContent = 'Checkout cancelled. No credits were added by this page.';
     } else {
       const id = params.get('session_id');
-      if (!/^cs_test_[A-Za-z0-9]+$/.test(id || '')) {
-        message.textContent = 'Unable to identify this test payment. Contact support if you need help.';
+      if (!/^cs_live_[A-Za-z0-9]+$/.test(id || '')) {
+        message.textContent = 'Unable to identify this payment. Contact support if you need help.';
       } else {
         busy = true;
         buttons.forEach(b => b.disabled = true);
@@ -79,9 +78,9 @@ if (session?.user.is_anonymous === false &&
         for (let i = 0; i < 15; i++) {
           const { data, error } = await supabase.rpc('get_credit_purchase_status', { p_session_id: id });
           if (error) { message.textContent = 'Unable to check payment status. Refresh to try again.'; break; }
-          if (data?.fulfilled === true) {
+          if (data?.fulfilled === true && data.livemode === true) {
             const balance = await refreshCredits();
-            message.textContent = `${data.credits} test credits added.` + (balance.unavailable ? ' Refresh to reload your balance.' : ' Your balance has been updated.');
+            message.textContent = `${data.credits} credits added.` + (balance.unavailable ? ' Refresh to reload your balance.' : ' Your balance has been updated.');
             confirmed = true;
             break;
           }
@@ -92,7 +91,7 @@ if (session?.user.is_anonymous === false &&
           const cleanUrl = new URL(location.href);
           cleanUrl.searchParams.delete('credit_payment');
           cleanUrl.searchParams.delete('session_id');
-          cleanUrl.searchParams.set('credits_test', '1');
+          cleanUrl.searchParams.delete('credits_test');
           history.replaceState(history.state, '', cleanUrl.href);
           busy = false;
           buttons.forEach(b => b.disabled = false);
