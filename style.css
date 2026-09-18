@@ -49,6 +49,7 @@ a { color: inherit; }
 .btn:active { transform: translateY(1px); }
 .btn-primary { background: var(--accent); color: #fff; }
 .btn-primary:hover { background: var(--accent-dark); }
+#submit-btn:disabled { background: #e0e0e0; color: #666; border-color: #e0e0e0; opacity: 1; cursor: not-allowed; }
 .btn-outline { background: #fff; color: var(--ink); border-color: var(--line); }
 .btn-outline:hover { border-color: var(--ink); }
 
@@ -266,6 +267,12 @@ a { color: inherit; }
    ========================================================================= */
 .account-page { max-width: 720px; margin: 0 auto; padding: 56px 28px 120px; }
 .account-page h1 { font-size: 32px; letter-spacing: -.01em; margin-bottom: 28px; }
+.account-body { background: #fff; }
+.account-page h1, .account-page .panel h2 { color: var(--accent-dark); }
+.account-page .panel { background: #fff; border-color: #bdd8c8; }
+.credits-panel #credit-balance { font-size: clamp(22px, 4vw, 30px); font-weight: 700; }
+.credits-panel .info-row { align-items: center; border-bottom-color: #c9ddd1; }
+.credits-panel .credit-summary { padding-top: 14px; border-top: 1px solid #c9ddd1; color: var(--accent-dark); }
 
 .panel {
   background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
@@ -277,6 +284,12 @@ a { color: inherit; }
 #credit-reload { margin-top: 18px; }
 .credit-packages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
 .credit-packages .btn { min-width: 0; padding: 12px 8px; font-size: 14px; text-align: center; white-space: normal; }
+.credits-panel .credit-packages .btn { display: flex; flex-direction: column; gap: 6px; border-radius: 14px; padding: 18px 8px; background: #fff; color: var(--accent-dark); border-color: #b7d3c2; }
+.credits-panel .credit-packages .btn:hover:not(:disabled) { background: #dcefe3; border-color: var(--accent); }
+.credits-panel .credit-packages .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.package-credits { font-weight: 700; }
+.package-price { font-size: 19px; }
+.package-price small { font-size: 11px; font-weight: 400; }
 
 .info-row {
   display: flex; justify-content: space-between; gap: 16px;

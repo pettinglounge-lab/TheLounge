@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=signup-terms-2" />
 </head>
 <body>
 
@@ -65,7 +65,11 @@
     const btn     = document.getElementById("submit-btn");
     const message = document.getElementById("message");
 
-    termsIn.addEventListener("change", () => { btn.disabled = !termsIn.checked; });
+    let submitting = false;
+    function updateSubmitButton() { btn.disabled = submitting || !termsIn.checked; }
+    termsIn.addEventListener("change", updateSubmitButton);
+    window.addEventListener("pageshow", updateSubmitButton);
+    updateSubmitButton();
 
     async function checkExisting() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -80,30 +84,38 @@
       e.preventDefault();
       const email = emailIn.value.trim();
       const password = passIn.value;
-      if (!email || !password || !termsIn.checked) return;
+      if (submitting || !email || !password || !termsIn.checked) return;
 
-      btn.disabled = true; btn.textContent = "Creating account…";
+      submitting = true;
+      updateSubmitButton(); btn.textContent = "Creating account…";
       message.textContent = ""; message.className = "msg";
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { terms_accepted_at: new Date().toISOString(), terms_version: "2026-09-08" } },
-      });
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { terms_accepted_at: new Date().toISOString(), terms_version: "2026-09-08" } },
+        });
 
-      if (error) {
-        message.textContent = error.message;
+        if (error) {
+          message.textContent = error.message;
+          message.className = "msg err";
+          return;
+        }
+
+        if (data.session) {
+          window.location.href = "index.html";        // confirmation off: straight in
+        } else {
+          message.textContent = "Account created. Check your email to confirm, then log in.";
+          message.className = "msg ok";
+        }
+      } catch {
+        message.textContent = "Unable to create your account. Please try again.";
         message.className = "msg err";
-        btn.disabled = false; btn.textContent = "Sign up";
-        return;
-      }
-
-      if (data.session) {
-        window.location.href = "index.html";        // confirmation off: straight in
-      } else {
-        message.textContent = "Account created. Check your email to confirm, then log in.";
-        message.className = "msg ok";
-        btn.disabled = false; btn.textContent = "Sign up";
+      } finally {
+        submitting = false;
+        updateSubmitButton();
+        btn.textContent = "Sign up";
       }
     });
 

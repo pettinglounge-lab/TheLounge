@@ -32,8 +32,21 @@
           <button type="submit" class="btn btn-primary" id="submit-btn">Log in</button>
         </form>
 
+        <p class="switch"><a href="#password-recovery" id="forgot-password">Forgot password?</a></p>
         <p class="msg" id="message"></p>
         <p class="switch">New to Petting Lounge? <a href="signup.html">Create an account</a></p>
+      </div>
+
+      <div id="password-recovery" hidden>
+        <h1>Reset your password</h1>
+        <p class="sub">Enter your account email and we’ll send you a reset link.</p>
+        <form id="recovery-form">
+          <label for="recovery-email">Email address</label>
+          <input type="email" id="recovery-email" required autocomplete="email" placeholder="you@example.com" />
+          <button type="submit" class="btn btn-primary" id="recovery-submit">Send reset link</button>
+        </form>
+        <p class="msg" id="recovery-message" role="status" aria-live="polite"></p>
+        <p class="switch"><a href="#form-view" id="back-to-login">Back to log in</a></p>
       </div>
 
       <!-- ALREADY SIGNED IN -->
@@ -58,12 +71,52 @@
     const passIn  = document.getElementById("password");
     const btn     = document.getElementById("submit-btn");
     const message = document.getElementById("message");
+    const recovery = document.getElementById("password-recovery");
+    const recoveryEmail = document.getElementById("recovery-email");
+    const recoverySubmit = document.getElementById("recovery-submit");
+    const recoveryMessage = document.getElementById("recovery-message");
+
+    document.getElementById("forgot-password").addEventListener("click", e => {
+      e.preventDefault();
+      recoveryEmail.value = emailIn.value;
+      formView.style.display = "none";
+      recovery.hidden = false;
+      recoveryEmail.focus();
+    });
+    document.getElementById("back-to-login").addEventListener("click", e => {
+      e.preventDefault();
+      recovery.hidden = true;
+      formView.style.display = "block";
+      emailIn.focus();
+    });
+    document.getElementById("recovery-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      if (recoverySubmit.disabled) return;
+      recoverySubmit.disabled = true;
+      recoverySubmit.textContent = "Sending…";
+      recoveryMessage.textContent = "";
+      recoveryMessage.className = "msg";
+      try {
+        const redirectTo = new URL("reset-password.html", window.location.href).href;
+        const { error } = await supabase.auth.resetPasswordForEmail(recoveryEmail.value.trim(), { redirectTo });
+        if (error) throw error;
+        recoveryMessage.textContent = "If an account exists for this email, you’ll receive a password reset link. Check your inbox and spam folder.";
+        recoveryMessage.className = "msg ok";
+      } catch {
+        recoveryMessage.textContent = "Unable to send a reset link right now. Please try again shortly.";
+        recoveryMessage.className = "msg err";
+      } finally {
+        recoverySubmit.disabled = false;
+        recoverySubmit.textContent = "Send reset link";
+      }
+    });
 
     async function checkExisting() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user.is_anonymous === false) {
         document.getElementById("account-email").textContent = session.user.email;
         formView.style.display = "none";
+        recovery.hidden = true;
         signedInView.style.display = "block";
       }
     }

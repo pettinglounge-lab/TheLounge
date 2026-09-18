@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=credit-layout-1" />
+  <link rel="stylesheet" href="style.css?v=account-color-2" />
 </head>
-<body>
+<body class="account-body">
 
   <site-nav></site-nav>
 
@@ -36,7 +36,7 @@
     </section>
 
     <!-- GENERATION CREDITS -->
-    <section class="panel">
+    <section class="panel credits-panel">
       <h2>Generation credits</h2>
       <div class="info-row">
         <span class="label">Current balance</span>
@@ -44,11 +44,11 @@
       </div>
       <div id="credit-reload" hidden>
         <h3>Buy credits</h3>
-        <p>Each artwork generation uses 10 credits. Purchased credits carry over.</p>
+        <p>10 credits per artwork.</p>
         <div class="credit-packages">
-          <button type="button" class="btn btn-outline" data-credit-package="100">100 credits · $4.99 USD</button>
-          <button type="button" class="btn btn-outline" data-credit-package="250">250 credits · $9.99 USD</button>
-          <button type="button" class="btn btn-outline" data-credit-package="500">500 credits · $17.99 USD</button>
+          <button type="button" class="btn btn-outline" data-credit-package="100"><span class="package-credits">100 credits</span><span class="package-price">$4.99 <small>USD</small></span></button>
+          <button type="button" class="btn btn-outline" data-credit-package="250"><span class="package-credits">250 credits</span><span class="package-price">$9.99 <small>USD</small></span></button>
+          <button type="button" class="btn btn-outline" data-credit-package="500"><span class="package-credits">500 credits</span><span class="package-price">$17.99 <small>USD</small></span></button>
         </div>
         <p id="credit-payment-msg" class="msg" role="status" aria-live="polite"></p>
       </div>
@@ -74,7 +74,7 @@
   <!-- account logic -->
   <script type="module">
     import { supabase } from "./supabaseClient.js";
-    import { GENERATION_COST, configureCreditProfile, dailyCreditAllowance, getDailyCredits } from "./credits.js";
+    import { configureCreditProfile, getDailyCredits } from "./credits.js";
 
     let userEmail = null;
 
@@ -104,10 +104,9 @@
         document.getElementById("credit-summary").textContent = "Unable to load credits. Refresh to try again.";
         return;
       }
-      const generations = Math.floor(remaining / GENERATION_COST);
       document.getElementById("credit-balance").textContent = `${remaining} credits`;
       document.getElementById("credit-summary").textContent =
-        `${free} daily credits + ${purchased} purchased credits · ${generations} generation${generations === 1 ? "" : "s"} available. Free credits reset daily at midnight Central time; purchased credits carry over.`;
+        `${free} daily · ${purchased} purchased`;
     }
     window.addEventListener("credits-changed", showCreditBalance);
 
