@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=artwork-preview-v2" />
+  <link rel="stylesheet" href="style.css?v=artwork-sketch-v3" />
 </head>
 <body>
 
@@ -221,6 +221,16 @@
 
     styleSelect.addEventListener("change", () => { selectedStyle = styleSelect.value; });
 
+    const previewSketch = document.querySelector(".hero .frame").cloneNode(true);
+    previewSketch.classList.add("preview-sketch");
+    document.getElementById("stage").prepend(previewSketch);
+
+    function showProductSketch() {
+      artworkPreview.style.display = "none";
+      artworkPreview.removeAttribute("src");
+      previewSketch.hidden = false;
+    }
+
     function resetModal() {
       selectedFile = null; scaledDataUrl = null; previewUrl = null;
       fileIn.value = ""; petName.value = "";
@@ -228,7 +238,7 @@
       msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
       genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
       postgen.style.display = "none"; mpLoad.style.display = "none";
-      artworkPreview.style.display = "none"; artworkPreview.src = "";
+      showProductSketch();
     }
 
     function closeModal() { overlay.classList.remove("open"); }
@@ -249,7 +259,7 @@
       drop.classList.add("has-file"); fname.textContent = "✓ " + file.name;
       genBtn.style.display = "block"; postgen.style.display = "none";
       msg.textContent = ""; attempts.textContent = "";
-      artworkPreview.style.display = "none";
+      showProductSketch();
       showCredits();
     }
 
@@ -278,7 +288,9 @@
         const data = await generatePreview(fd);
 
         previewUrl = data.previewUrl;
+        previewSketch.hidden = true;
         artworkPreview.src = previewUrl;
+        artworkPreview.alt = "Your generated artwork";
         artworkPreview.style.display = "block";
 
         const balance = getDailyCredits();
