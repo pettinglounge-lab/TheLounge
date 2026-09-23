@@ -118,8 +118,10 @@
           <input type="file" id="file" accept="image/*" hidden />
           <p class="upload-tip"><strong>Tip:</strong> photos in bright, direct light work best — avoid strong shadows.</p>
 
-          <label class="field-label">Pet's name (optional)</label>
-          <input type="text" id="petName" maxlength="30" placeholder="e.g. Biscuit" />
+          <div id="petNameField">
+            <label class="field-label" for="petName">Pet's name (optional)</label>
+            <input type="text" id="petName" maxlength="30" placeholder="e.g. Biscuit" />
+          </div>
 
           <button class="btn btn-primary" id="generate">Generate preview</button>
           <div id="postgen" style="display:none;">
@@ -128,7 +130,6 @@
           </div>
           <p class="msg" id="msg"></p>
           <p class="attempts-note" id="attempts"></p>
-          <p class="checkout-note" style="margin-top:14px;">Frame color and size are chosen next, at checkout.</p>
         </div>
       </div>
     </div>
@@ -185,6 +186,7 @@
     const fileIn   = document.getElementById("file");
     const fname    = document.getElementById("fname");
     const petName  = document.getElementById("petName");
+    const petNameField = document.getElementById("petNameField");
     const genBtn   = document.getElementById("generate");
     const postgen  = document.getElementById("postgen");
     const continueBtn = document.getElementById("continue");
@@ -219,7 +221,16 @@
       overlay.classList.add("open");
     }
 
-    styleSelect.addEventListener("change", () => { selectedStyle = styleSelect.value; });
+    function updatePetNameField() {
+      const allowsName = selectedStyle === "White Background";
+      petNameField.hidden = !allowsName;
+      petName.disabled = !allowsName;
+    }
+
+    styleSelect.addEventListener("change", () => {
+      selectedStyle = styleSelect.value;
+      updatePetNameField();
+    });
 
     const previewSketch = document.querySelector(".hero .frame").cloneNode(true);
     previewSketch.classList.add("preview-sketch");
@@ -234,6 +245,7 @@
     function resetModal() {
       selectedFile = null; scaledDataUrl = null; previewUrl = null;
       fileIn.value = ""; petName.value = "";
+      updatePetNameField();
       drop.classList.remove("has-file"); fname.textContent = "";
       msg.textContent = ""; msg.className = "msg"; attempts.textContent = "";
       genBtn.style.display = "block"; genBtn.disabled = false; genBtn.textContent = "Generate preview";
@@ -283,7 +295,8 @@
         fd.append("image", blob, "photo.jpg");
         fd.append("productType", CATEGORY);
         fd.append("style", selectedStyle);
-        fd.append("note", "");   // name is NOT baked into the image — added at fulfillment/frame later
+        fd.append("note", "");
+        fd.append("petName", selectedStyle === "White Background" ? petName.value.trim() : "");
 
         const data = await generatePreview(fd);
 
@@ -317,7 +330,7 @@
       const order = {
         category: CATEGORY,
         style: selectedStyle,
-        petName: petName.value.trim() || null,
+        petName: selectedStyle === "White Background" ? petName.value.trim() || null : null,
         product_type: selectedProduct.product_type,
         printify_product_id: selectedProduct.printify_product_id,
         blueprint_id: selectedProduct.blueprint_id,

@@ -8,7 +8,7 @@ export async function generatePreview(form) {
   const owner = auth?.session?.user?.id || "guest";
   const image = form.get("image");
   const imageHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", await image.arrayBuffer())), b => b.toString(16).padStart(2, "0")).join("");
-  const signature = JSON.stringify([imageHash, form.get("productType"), form.get("style"), form.get("note")]);
+  const signature = JSON.stringify([imageHash, form.get("productType"), form.get("style"), form.get("note"), form.get("petName")]);
   const signatureHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(signature))), b => b.toString(16).padStart(2, "0")).join("");
   const key = `ptl_preview_attempt:${owner}:${signatureHash}`;
   let prior;
@@ -29,7 +29,7 @@ export async function generatePreview(form) {
   }
   if (response?.balance) applyCreditBalance(response.balance);
   if (error || response?.error) {
-    if (response?.creditStatus === "refunded" || ["insufficient_credits", "request_refunded", "invalid_image", "invalid_note", "invalid_category", "invalid_style", "invalid_request_id", "invalid_session", "configuration_error"].includes(response?.code)) sessionStorage.removeItem(key);
+    if (response?.creditStatus === "refunded" || ["insufficient_credits", "request_refunded", "invalid_image", "invalid_note", "invalid_pet_name", "invalid_category", "invalid_style", "invalid_request_id", "invalid_session", "configuration_error"].includes(response?.code)) sessionStorage.removeItem(key);
     await refreshCredits();
     throw new Error(response?.error || "Connection interrupted. Retry with the same photo and theme to recover this attempt.");
   }
