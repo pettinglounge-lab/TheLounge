@@ -66,7 +66,11 @@ export function creditBalanceText() {
   if (b.unavailable) return "Credits unavailable. Please refresh to try again.";
   return memberId ? `${b.free} daily + ${b.purchased} purchased credits` : `${b.remaining} credits remaining today`;
 }
-export function creditStatusText() { return `${creditBalanceText()} · ${GENERATION_COST} credits per generation`; }
+export function creditStatusText() {
+  const b = getDailyCredits();
+  if (b.unavailable) return "Credits unavailable. Please refresh to try again.";
+  return `${b.remaining} credits available`;
+}
 window.addEventListener("focus", () => { void initializeCreditProfile(); });
 window.addEventListener("storage", changed);
 supabase.auth.onAuthStateChange(() => {
