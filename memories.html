@@ -21,7 +21,7 @@
       <p class="lead">Turn a favorite photo into a timeless keepsake portrait — a heartfelt tribute to the pets and moments you love most.</p>
       <div class="cta-row">
         <a href="#choose" class="btn btn-primary">Choose a product</a>
-        <a href="gallery.html" class="btn btn-outline">See examples</a>
+        <a href="gallery.html" class="btn btn-outline">Browse catalog</a>
       </div>
       <p class="reassure">Free shipping · Handcrafted with care · A meaningful gift</p>
     </div>
@@ -162,7 +162,7 @@
       const { data } = await supabase.from("products").select("*").eq("category", CATEGORY);
       (data || []).forEach(product => products[product.product_type] = product);
       rows.innerHTML = ROWS.map(row => `
-        <section class="product-row">
+        <section class="product-row" id="product-${row.type}">
           <h3 class="row-title">${row.label}</h3>
           <div class="product-strip">
             ${row.images.map((image, index) => `

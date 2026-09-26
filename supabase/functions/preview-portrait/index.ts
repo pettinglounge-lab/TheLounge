@@ -44,6 +44,9 @@ Elegant, timeless, warm, refined, emotionally expressive, premium wall-art quali
 DO NOT INCLUDE:
 Any text other than the pet's name explicitly supplied in the PET NAME instructions below. No borders, mats, frames, signatures, logos, watermarks, props, furniture, scenery, extra animals, extra limbs, distorted anatomy, human features, costumes, collars that are not present in the reference, or invented markings.`,
 
+"Custom":
+`Create premium, print-ready artwork from the uploaded reference photograph using the customer's description below. Preserve the recognizable identity, proportions, and important details of the subjects unless the customer explicitly requests a change. Follow the requested artistic medium, background, composition, and lettering. If no description is supplied, create a refined hand-rendered soft pastel interpretation of the photograph. Produce only the finished artwork, without a product mockup, frame, mat, border, signature, or watermark. Do not add text unless requested.`,
+
 "Royal Renaissance":
 
 `Create a breathtaking museum-quality soft pastel Renaissance portrait of the exact pet shown in the uploaded reference image, reimagined as European nobility.

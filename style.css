@@ -694,3 +694,30 @@ a { color: inherit; }
 .mockup-stage .mockup-art {
   position: absolute; object-fit: cover; display: none;
 }
+
+/* Product catalog */
+.catalog-page { padding-top: 56px; padding-bottom: 72px; }
+.catalog-heading h1 { font-family: "DM Serif Display", Georgia, serif; font-size: clamp(36px, 6vw, 56px); font-weight: 400; }
+.catalog-heading p, .catalog-description, #catalog-status { color: var(--ink-soft); }
+.catalog-categories { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0; }
+.catalog-section { margin-top: 40px; scroll-margin-top: 100px; }
+.catalog-section h2 { font-family: "DM Serif Display", Georgia, serif; font-size: 32px; font-weight: 400; }
+.catalog-description { margin: 6px 0 20px; }
+.catalog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.catalog-card { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+.catalog-image { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; background: var(--wash); text-decoration: none; }
+.catalog-image img { width: 100%; height: 100%; object-fit: contain; }
+.catalog-details { padding: 22px; }
+.catalog-details h3 { font-size: 20px; }
+.catalog-price { color: var(--ink-soft); margin-top: 6px; }
+.catalog-details .btn { margin-top: 18px; }
+.product-row[id] { scroll-margin-top: 100px; }
+@media (max-width: 760px) { .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 500px) { .catalog-grid { grid-template-columns: 1fr; } .catalog-page { padding-top: 32px; } }
+.catalog-product { width: 100%; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.catalog-product:hover { border-color: var(--brown); }
+.catalog-product:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.catalog-product:disabled { opacity: .6; cursor: wait; }
+.catalog-product .catalog-details { display: block; }
+.catalog-product-label { display: block; font-family: "DM Serif Display", Georgia, serif; font-size: 32px; }
+#artPrompt { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; resize: vertical; }

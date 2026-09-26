@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gallery — Petting Lounge</title>
+  <title>Catalog — Petting Lounge</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,41 +12,76 @@
 </head>
 <body>
 
-  <site-nav active="gallery"></site-nav>
+  <site-nav active="catalog"></site-nav>
 
-  <main class="projects-page">
-    <h1>Gallery</h1>
-    <p class="sub" style="color:var(--ink-soft); margin-top:-14px; margin-bottom:28px;">
-      A few of our favorite custom portraits.
-    </p>
-
-    <div class="example-grid" id="gallery"></div>
+  <main class="container catalog-page">
+    <header class="catalog-heading">
+      <h1>Our catalog</h1>
+    </header>
+    <div class="catalog-grid catalog-section">
+      <button type="button" class="catalog-card catalog-product" data-type="framed-poster" data-img="assets/dogframe1.png">
+        <span class="catalog-image">
+          <img src="assets/dogframe1.png" alt="Framed pet portrait" />
+        </span>
+        <span class="catalog-details"><span class="catalog-product-label">Framed Art</span></span>
+      </button>
+      <button type="button" class="catalog-card catalog-product" data-type="greeting-card" data-img="assets/card1.png">
+        <span class="catalog-image">
+          <img src="assets/card1.png" alt="Pet portrait greeting card" />
+        </span>
+        <span class="catalog-details"><span class="catalog-product-label">Greeting Card</span></span>
+      </button>
+      <button type="button" class="catalog-card catalog-product" data-type="poster" data-img="assets/ppet2.png">
+        <span class="catalog-image">
+          <img src="assets/ppet2.png" alt="Pet portrait poster" />
+        </span>
+        <span class="catalog-details"><span class="catalog-product-label">Poster</span></span>
+      </button>
+    </div>
   </main>
 
-  <script type="module">
-    // Real images live in /assets. Any missing file falls back to a placeholder tile.
-    const ITEMS = [
-      { file: "assets/dogframe1.png", who: "Cooper",         sub: "Golden Retriever" },
-      { file: "assets/gallery-2.jpg", who: "The Chen Home",   sub: "House portrait" },
-      { file: "assets/gallery-3.jpg", who: "Miso",            sub: "Tabby cat" },
-      { file: "assets/gallery-4.jpg", who: "Forever loved",   sub: "Keepsake" },
-      { file: "assets/gallery-5.jpg", who: "Pepper",          sub: "Goldendoodle" },
-      { file: "assets/gallery-6.jpg", who: "Maple Street",    sub: "House portrait" },
-    ];
-
-    document.getElementById("gallery").innerHTML = ITEMS.map((e) => `
-      <div class="example-card">
-        <div class="example-thumb">
-          <span>Example</span>
-          <img src="${e.file}" alt="${e.who}" onerror="this.remove()" />
+  <!-- MODAL: image creation only. Frame color + size are chosen at checkout. -->
+  <div class="modal-overlay" id="overlay">
+    <div class="modal artwork-modal">
+      <button class="modal-close" id="close" aria-label="Close">×</button>
+      <div class="modal-grid">
+        <div class="modal-preview" id="mp-panel">
+          <div class="artwork-stage" id="stage">
+            <img class="artwork-preview" id="artwork-preview" src="" alt="Your portrait" />
+          </div>
+          <div class="mp-loading" id="mp-loading" style="display:none;">
+            <div class="spinner"></div>
+            Creating your portrait…<br />this takes a few seconds.
+          </div>
         </div>
-        <div class="cap">
-          <div class="who">${e.who}</div>
-          <div class="sub">${e.sub}</div>
-        </div>
-      </div>`).join("");
-  </script>
+        <div class="modal-form">
+          <h2 id="modal-title">Create your artwork</h2>
+          <p class="modal-sub" id="modal-sub">Printed &amp; shipped</p>
 
+          <label class="field-label">Upload your photo</label>
+          <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a photo">
+            <div><strong>Upload a photo</strong> or click to browse</div>
+            <div id="fname" style="margin-top:6px;"></div>
+          </div>
+          <input type="file" id="file" accept="image/*" hidden />
+          <p class="upload-tip"><strong>Tip:</strong> photos in bright, direct light work best — avoid strong shadows.</p>
+
+          <label class="field-label" for="artPrompt">Your prompt</label>
+          <textarea id="artPrompt" rows="4" maxlength="5000" placeholder="Describe how you’d like your photo turned into artwork."></textarea>
+
+          <button class="btn btn-primary" id="generate">Generate preview</button>
+          <div id="postgen" style="display:none;">
+            <a class="btn btn-primary" id="continue" style="width:100%; text-align:center;">Continue to checkout</a>
+            <button class="btn btn-outline btn-sm" id="regen" style="width:100%; margin-top:8px;">Regenerate</button>
+          </div>
+          <p class="msg" id="msg"></p>
+          <p class="attempts-note" id="attempts"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="catalog.js"></script>
   <script type="module" src="Navbar.js"></script>
   <footer class="footer">
     <div class="container">

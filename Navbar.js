@@ -4,15 +4,15 @@
 //     <script type="module" src="Navbar.js"></script>
 // Styling lives in style.css (the .nav classes).
 //
-// Layout:  Petting Lounge | Create ▾ · Gallery · Custom | account
+// Layout:  Petting Lounge | Create ▾ · Catalog · Custom | account
 //   - "Create" ▾ -> Pet (index.html), Home (home.html), Memory (memories.html)
-//   - "Gallery"  -> gallery.html
+//   - "Catalog"  -> gallery.html
 //   - "Custom"   -> custom.html
 //   - right link -> "Account" (account.html) if signed in, else "Sign up" (signup.html)
 //
 // Highlight the current page with <site-nav active="..."> using one of:
 //   pets | home | memories | create   (all highlight the Create button)
-//   gallery | custom
+//   catalog | custom
 
 import { supabase } from "./supabaseClient.js";
 
@@ -53,7 +53,7 @@ class SiteNav extends HTMLElement {
             </div>
           </div>
 
-          <a href="gallery.html"  class="${on("gallery")}">Gallery</a>
+          <a href="gallery.html"  class="${on("catalog")}">Catalog</a>
           <a href="custom.html" class="${on("custom")}">Custom</a>
         </nav>
 
