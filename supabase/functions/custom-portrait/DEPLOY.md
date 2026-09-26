@@ -6,7 +6,7 @@ the function verifies customer tokens through Supabase Auth and rejects guests.
 
 Requires the credit-aware `preview-portrait` already deployed and the standard
 SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY environment variables.
-It forwards the customer's token to preview-portrait, which uses GEMINI_API_KEY.
+It forwards the customer's token to preview-portrait, which uses OPENAI_API_KEY.
 Never expose service-role credentials to the browser.
 
 Input: JSON `{ "portraitId": "uuid", "requestId": "uuid" }`.
