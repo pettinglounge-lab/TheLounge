@@ -1,27 +1,23 @@
 # OpenAI rendering update
 
-Deploy the complete index.ts in this folder to preview-portrait. Set OPENAI_API_KEY
-in Supabase Edge Function secrets. Keep gateway Verify JWT OFF; the handler
-continues to verify member tokens itself.
+Deploy the complete index.ts to preview-portrait and set OPENAI_API_KEY in
+Supabase Edge Function secrets. Keep gateway Verify JWT OFF; the handler
+verifies member tokens itself.
 
-Uses POST https://api.openai.com/v1/images/edits with gpt-image-2.5-sunburst,
-quality=max, size=2336x3504, and lossless PNG output. This is the largest exact
-2:3 resolution satisfying the documented 8,294,400-pixel cap and 16px increments.
-These larger custom sizes are experimental. Confirm model access for your project.
-At 20x30 inches this is 116.8 PPI; 300-PPI production requires 6000x9000 pixels
-and a separate upscaling step. No upscaling is performed here.
+Rendering now uses gpt-image-2.5-sunburst, quality=high, size=1024x1536,
+and lossless PNG via the image edits endpoint. The model is pinned; an existing
+OPENAI_IMAGE_MODEL secret no longer changes it. The output remains 2:3 portrait.
+At 20x30 inches this is 51.2 PPI. No upscaling is performed; larger print files
+need a separate print-preparation step.
 
-Preserves the pasted Floral prompt, optional pet-name rendering, and the catalog
-Custom style. Credit reservations, replay, storage, and refunds retain their
-existing behavior. Requests time out at 120 seconds; uncertain timeouts retain
-reservations for review. Test max-quality latency against your deployed function
-limits before rollout. Large PNG data URLs also need an end-to-end checkout test
-because the website uses sessionStorage for preview handoff.
+Prompts, pet names, catalog Custom style, credit reservations, replay, storage,
+and refunds are preserved. Image render timing logs include the model, size,
+quality, and provider response/download time. Actual token savings and visual
+quality require a live comparison. Requests still time out at 120 seconds.
 
-Local validation did not make a paid image request or deploy the function.
-Run Deno type checking and a signed-in generation/checkout smoke test, plus a
-guest generation test, before publishing. Check rejected-request refunds and
-same-request replay. The original rollout notes below are historical.
+Local checks did not make a paid generation request or deploy the function.
+Before rollout, run Deno type checking and test signed-in and guest generation,
+checkout, rejected-request refunds, and same-request replay. Historical notes follow.
 
 ---
 

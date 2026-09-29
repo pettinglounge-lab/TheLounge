@@ -1,8 +1,8 @@
 // Full replacement for preview-portrait. Keep gateway Verify JWT OFF for guests.
 // Member JWTs are verified inside the handler. Requires the deployed credit SQL.
-// OpenAI image edits, maximum quality, exact 2:3 portrait output.
+// OpenAI image edits, high quality, 1024x1536 portrait output.
 import { encodeBase64, decodeBase64 } from "jsr:@std/encoding/base64";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -11,10 +11,9 @@ const cors = {
 };
 
 const MODEL = "gpt-image-2.5-sunburst";
-// Largest exact 2:3 size within the documented pixel cap and 16px increments.
-// Custom resolutions above 2560x1440 are experimental.
-const IMAGE_SIZE = "2336x3504";
-const IMAGE_QUALITY = "max";
+// Lower-token rendering with the same 2:3 portrait aspect ratio.
+const IMAGE_SIZE = "1024x1536";
+const IMAGE_QUALITY = "high";
 
 // ── Three prompts, one per product. Written as transform instructions. ────────
 // ── Prompts organized by category → named style. Add more styles per category
@@ -34,7 +33,7 @@ Realistic fine-art soft pastel illustration with sophisticated hand-rendered det
 POSE & COMPOSITION:
 Front-facing or naturally oriented toward the viewer based on the reference image. Create a centered head-and-upper-chest portrait with anatomically correct proportions.
 
-Use a vertical portrait composition suitable for framing. The pet should rise naturally from the bottom edge of the artwork and occupy approximately the lower two-thirds of the canvas, leaving generous clean white negative space above the head. Keep comfortable breathing room around both ears.
+The pet should rise naturally from the bottom edge of the artwork and occupy approximately the lower two-thirds of the canvas, leaving generous clean white negative space above the head. Keep comfortable breathing room around both ears.
 
 BACKGROUND:
 Completely seamless, uniform pure white (#FFFFFF) extending edge-to-edge. No visible floor, horizon, gradient, vignette, texture, cast shadow, environmental shadow, scenery, or decorative elements.
@@ -46,10 +45,10 @@ FINAL AESTHETIC:
 Elegant, timeless, warm, refined, emotionally expressive, premium wall-art quality, highly detailed and print-ready.
 
 DO NOT INCLUDE:
-Any text other than the pet's name explicitly supplied in the PET NAME instructions below. No borders, mats, frames, signatures, logos, watermarks, props, furniture, scenery, extra animals, extra limbs, distorted anatomy, human features, costumes, collars that are not present in the reference, or invented markings.`,
+No mats, signatures, logos, watermarks, props, furniture, scenery, extra animals, extra limbs, distorted anatomy, human features, costumes, collars that are not present in the reference, or invented markings.`,
 
 "Custom":
-`Create premium, print-ready artwork from the uploaded reference photograph using the customer's description below. Preserve the recognizable identity, proportions, and important details of the subjects unless the customer explicitly requests a change. Follow the requested artistic medium, background, composition, and lettering. If no description is supplied, create a refined hand-rendered soft pastel interpretation of the photograph. Produce only the finished artwork, without a product mockup, frame, mat, border, signature, or watermark. Do not add text unless requested.`,
+`Create premium, print-ready artwork from the uploaded reference photograph using the customer's description below. Preserve the recognizable identity, proportions, and important details of the subjects unless the customer explicitly requests a change. Follow the requested artistic medium, background, composition, and lettering. If no description is supplied, create a refined hand-rendered soft pastel interpretation of the photograph. Do not include a mat, signature, or watermark. Do not add text unless requested.`,
 
 "Royal Renaissance":
 
@@ -133,7 +132,7 @@ Keep the face, ears, muzzle, whiskers, and identifying markings completely unobs
 
 POSE & COMPOSITION:
 
-Vertical formal portrait. Centered head-and-chest composition with a poised, calm, dignified posture.
+Formal portrait. Centered head-and-chest composition with a poised, calm, dignified posture.
 
 The pet looks toward the viewer with quiet confidence and regal presence.
 
@@ -221,7 +220,7 @@ The overall image should feel richly curated, dimensional, and visually striking
 
 DO NOT INCLUDE:
 
-Photorealism, photographic rendering, hyper-realistic fur, CGI rendering, 3D animation rendering, plastic surfaces, perfectly smooth digital shading, airbrushed digital surfaces, overly glossy eyes, monochromatic color schemes, excessive color matching, identical dominant colors across the pet clothing and background, muddy low-contrast palettes, flat lighting, human facial features, human hands, human arms, human body proportions, extra limbs, distorted anatomy, exaggerated facial features, crowns that cover the ears, modern clothing, comedy elements, excessive glitter, text, names, letters, typography, borders, frames, signatures, logos, or watermarks.`,
+Photorealism, photographic rendering, hyper-realistic fur, CGI rendering, 3D animation rendering, plastic surfaces, perfectly smooth digital shading, airbrushed digital surfaces, overly glossy eyes, monochromatic color schemes, excessive color matching, identical dominant colors across the pet clothing and background, muddy low-contrast palettes, flat lighting, human facial features, human hands, human arms, human body proportions, extra limbs, distorted anatomy, exaggerated facial features, crowns that cover the ears, modern clothing, comedy elements, excessive glitter, text, names, letters, typography, signatures, logos, or watermarks.`,
 
 
 "Floral":
@@ -489,7 +488,7 @@ PRIORITIZE, IN ORDER:
 
 DO NOT INCLUDE:
 
-Photorealistic rendering, photographic fur, hyper-detailed individual hairs, glass-like eyes, glossy photographic noses, pore-level detail, CGI realism, smooth digital airbrushing, perfectly polished surfaces, photography-style depth of field, lens blur, HDR effects, camera artifacts, clothing, costumes, crowns, human characteristics, anthropomorphic anatomy, distorted anatomy, extra limbs, duplicate facial features, altered facial markings, invented coat markings, exaggerated eyes, flowers covering the face, rigid floral symmetry, obvious repeating patterns, flat wallpaper appearance, photographic scenery, unrelated objects, text, names, letters, typography, borders, frames, signatures, logos, or watermarks.
+Photorealistic rendering, photographic fur, hyper-detailed individual hairs, glass-like eyes, glossy photographic noses, pore-level detail, CGI realism, smooth digital airbrushing, perfectly polished surfaces, photography-style depth of field, lens blur, HDR effects, camera artifacts, clothing, costumes, crowns, human characteristics, anthropomorphic anatomy, distorted anatomy, extra limbs, duplicate facial features, altered facial markings, invented coat markings, exaggerated eyes, flowers covering the face, rigid floral symmetry, obvious repeating patterns, flat wallpaper appearance, photographic scenery, unrelated objects, text, names, letters, typography, signatures, logos, or watermarks.
 `,
 
 "Princess":
@@ -538,7 +537,7 @@ Do not give the pet human shoulders, arms, hands, torso anatomy, or other human 
 
 POSE & COMPOSITION:
 
-Vertical portrait orientation. Centered head-and-upper-chest or upper-body composition with a graceful, confident, warm royal pose.
+Centered head-and-upper-chest or upper-body composition with a graceful, confident, warm royal pose.
 
 The pet must be the undeniable focal point of the image and should visually dominate the composition. Enlarge the pet within the frame so the face, chest, and elegant attire occupy most of the image.
 
@@ -592,7 +591,7 @@ The pet should remain highly recognizable, beautifully dimensional, and clearly 
 
 DO NOT INCLUDE:
 
-Photorealism, photographic rendering, hyper-realistic fur, CGI rendering, 3D animation rendering, plastic surfaces, glossy character rendering, perfectly smooth digital shading, airbrushed digital surfaces, extreme micro-detail, photographic depth of field, photographic bokeh, overly glossy eyes, exaggerated cartoon anatomy, oversized unrealistic eyes, altered facial markings, human faces, human anatomy, human hands, extra limbs, distorted paws, excessive glitter, clutter, text, names, letters, typography, borders, frames, signatures, logos, or watermarks.
+Photorealism, photographic rendering, hyper-realistic fur, CGI rendering, 3D animation rendering, plastic surfaces, glossy character rendering, perfectly smooth digital shading, airbrushed digital surfaces, extreme micro-detail, photographic depth of field, photographic bokeh, overly glossy eyes, exaggerated cartoon anatomy, oversized unrealistic eyes, altered facial markings, human faces, human anatomy, human hands, extra limbs, distorted paws, excessive glitter, clutter, text, names, letters, typography, signatures, logos, or watermarks.
 `,
 
 
@@ -635,8 +634,6 @@ Avoid campy fantasy elements or comic-book exaggeration. The result should feel 
 POSE & COMPOSITION:
 
 Create a centered, commanding portrait of the pet with a strong frontal or naturally heroic angle based on the uploaded reference image.
-
-Use a vertical composition suitable for framed wall art.
 
 The pet should be positioned centrally in the frame and occupy approximately the lower two-thirds to three-quarters of the composition.
 
@@ -714,7 +711,7 @@ The pet must remain the undeniable hero of the composition.
 
 DO NOT INCLUDE:
 
-Text, names, typography, logos, watermarks, borders, mats, frames, scenery, props, furniture, costumes, superhero accessories, comic-book elements, city skylines, bats, symbols, capes, extra animals, extra limbs, distorted anatomy, artificial eye colors, or invented markings.` 
+Text, names, typography, logos, watermarks, mats, scenery, props, furniture, costumes, superhero accessories, comic-book elements, city skylines, bats, symbols, capes, extra animals, extra limbs, distorted anatomy, artificial eye colors, or invented markings.`
 
 },
 
@@ -749,7 +746,7 @@ SKY:
 Create a refined painterly golden-hour sky using subtle layers of pale blue, warm cream, soft peach, delicate blush, and restrained lavender. Keep it sophisticated and natural rather than dramatically saturated.
 
 COMPOSITION:
-Vertical or portrait-oriented fine-art composition centered on the home's primary facade. Keep the entire important structure comfortably within the canvas with breathing room around the roof and sides.
+Fine-art composition centered on the home's primary facade. Keep the entire important structure comfortably within the canvas with breathing room around the roof and sides.
 
 Allow a graceful portion of sky above the roofline and use the lawn, driveway, or walkway to visually anchor the lower portion of the artwork.
 
@@ -757,7 +754,7 @@ FINAL AESTHETIC:
 Warm, nostalgic, elegant, inviting, timeless, highly detailed, emotionally evocative, gallery-quality and suitable for a premium framed keepsake.
 
 DO NOT INCLUDE:
-House numbers or address text, cars, people, trash cans, utility wires, temporary clutter, artificial structural additions, text, letters, typography, borders, mats, frames, signatures, logos, or watermarks.`,
+House numbers or address text, cars, people, trash cans, utility wires, temporary clutter, artificial structural additions, text, letters, typography, mats, signatures, logos, or watermarks.`,
 
 "Winter":
 `Create a breathtaking commissioned soft pastel architectural portrait of the exact home shown in the uploaded reference photograph, transformed into an elegant and serene winter scene.
@@ -797,7 +794,7 @@ SKY:
 A sophisticated winter sky blending muted icy blue, soft lavender, pale blush pink, and subtle dusk tones. Avoid extreme saturation or dramatic fantasy colors.
 
 COMPOSITION:
-Balanced portrait-oriented architectural composition centered on the primary facade. Keep the home's important architecture fully visible with comfortable breathing room around the roofline.
+Balanced architectural composition centered on the primary facade. Keep the home's important architecture fully visible with comfortable breathing room around the roofline.
 
 Leave an elegant amount of winter sky above and use a pristine snow-covered foreground, walkway, or driveway to anchor the composition.
 
@@ -805,7 +802,7 @@ FINAL AESTHETIC:
 Peaceful, nostalgic, luxurious, magical yet believable, warm and inviting, highly detailed, gallery-quality, and suitable for a premium framed holiday or keepsake portrait.
 
 DO NOT INCLUDE:
-House numbers or address text, cars, people, trash cans, power lines, tire tracks, footprints, dirty snow, construction clutter, altered architecture, text, letters, typography, borders, mats, frames, signatures, logos, or watermarks.`,
+House numbers or address text, cars, people, trash cans, power lines, tire tracks, footprints, dirty snow, construction clutter, altered architecture, text, letters, typography, mats, signatures, logos, or watermarks.`,
 },
 
 memory: {
@@ -1105,7 +1102,7 @@ Create the artwork with the visual quality expected of an expensive commissioned
 
 The artwork itself should feel complete and gallery-worthy.
 
-Do not show an actual frame, mat, gallery wall, room mockup, or border unless explicitly requested.
+Do not show a mat or gallery wall unless explicitly requested.
 
 The generated image itself is the finished pastel artwork that will later be printed and framed.
 
@@ -1169,7 +1166,7 @@ If photographic realism conflicts with visible pastel artistry, preserve the per
 
 DO NOT INCLUDE:
 
-Photorealistic rendering, photographic skin texture, photographic micro-detail, camera-like sharpness, glossy skin, digital airbrushing, photo-filter appearance, realistic camera grain, photographic depth of field, cinematic photography, HDR photography, hyperrealism, smooth CGI rendering, glossy digital painting, invisible brushwork, completely smooth gradients, photo restoration appearance, a photograph with pastel texture placed over it, generic or substituted faces, new people, removed people, duplicated people, altered expressions, dramatically changed hairstyles, redesigned clothing, invented jewelry, substantially repositioned subjects, distorted anatomy, extra fingers, missing fingers, extra limbs, missing limbs, fantasy elements, generic replacement scenery, white backgrounds, studio backdrops, cartoon styling, anime styling, vector illustration, watercolor appearance, oil-paint appearance, acrylic-paint appearance, text, names, dates, typography, borders, mats, visible picture frames, signatures, logos, or watermarks unless specifically requested.`,
+Photorealistic rendering, photographic skin texture, photographic micro-detail, camera-like sharpness, glossy skin, digital airbrushing, photo-filter appearance, realistic camera grain, photographic depth of field, cinematic photography, HDR photography, hyperrealism, smooth CGI rendering, glossy digital painting, invisible brushwork, completely smooth gradients, photo restoration appearance, a photograph with pastel texture placed over it, generic or substituted faces, new people, removed people, duplicated people, altered expressions, dramatically changed hairstyles, redesigned clothing, invented jewelry, substantially repositioned subjects, distorted anatomy, extra fingers, missing fingers, extra limbs, missing limbs, fantasy elements, generic replacement scenery, white backgrounds, studio backdrops, cartoon styling, anime styling, vector illustration, watercolor appearance, oil-paint appearance, acrylic-paint appearance, text, names, dates, typography, mats, signatures, logos, or watermarks unless specifically requested.`,
 
 },
 
@@ -1190,7 +1187,7 @@ export async function handler(req: Request) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json(405, { error: "Use POST.", code: "method_not_allowed" });
 
-  let admin: ReturnType<typeof createClient> | undefined;
+  let admin: SupabaseClient | undefined;
   let memberId: string | null = null, requestId: string | null = null;
   let reserved = false, refundSafe = true, balance = null;
   try {
@@ -1293,6 +1290,7 @@ export async function handler(req: Request) {
     // Once dispatched, a network timeout is an uncertain outcome. Keep the
     // reservation for reconciliation instead of automatically refunding it.
     refundSafe = false;
+    const renderStarted = performance.now();
     const response = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
       headers: { "Authorization": "Bearer " + openaiKey },
@@ -1305,6 +1303,11 @@ export async function handler(req: Request) {
       throw failure(502, "generation_failed", "The image service could not generate your artwork.");
     }
     const output = await response.json();
+    console.info("Image render timing", JSON.stringify({
+      requestId, model: MODEL, size: IMAGE_SIZE, quality: IMAGE_QUALITY,
+      elapsedMs: Math.round(performance.now() - renderStarted),
+      providerRequestId: response.headers.get("x-request-id"),
+    }));
     const encodedImage = output?.data?.[0]?.b64_json;
     const imageData = typeof encodedImage === "string" && encodedImage.length ? { data: encodedImage } : undefined;
     if (!imageData?.data) {

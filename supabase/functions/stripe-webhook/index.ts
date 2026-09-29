@@ -40,6 +40,17 @@ export async function handler(req: Request) {
     const eventSession = event.data.object as Stripe.Checkout.Session;
     // Retrieve current payment details directly from Stripe before granting.
     const session = await stripe.checkout.sessions.retrieve(eventSession.id);
+    if (session.metadata?.purpose === "portrait_order") {
+      if (session.payment_status !== "paid") return json(200, { received: true, pending: true });
+      const finalized = await fetch(url + "/functions/v1/finalize-order", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + serviceKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: session.id }),
+        signal: AbortSignal.timeout(60000),
+      });
+      if (!finalized.ok) throw new Error("Order finalization failed");
+      return json(200, { received: true });
+    }
     if (session.metadata?.purpose !== "credit_reload") {
       return json(200, { received: true, ignored: true });
     }
@@ -70,7 +81,7 @@ export async function handler(req: Request) {
     return json(200, { received: true });
   } catch {
     // Non-2xx makes Stripe retry. The SQL session key prevents double credit.
-    console.error("Stripe credit fulfillment needs retry", event.id);
+    console.error("Stripe fulfillment needs retry", event.id);
     return json(500, { error: "Unable to fulfill payment. Retry delivery." });
   }
 }
