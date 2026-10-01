@@ -598,6 +598,16 @@ a { color: inherit; }
 .summary .secure { text-align: center; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; }
 .summary .stub { margin-top: 12px; font-size: 13px; color: var(--ink-soft); background: var(--wash); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; text-align: center; }
 
+.shipping-form { margin-top: 28px; }
+.shipping-form fieldset { border: 0; padding: 0; margin: 0 0 20px; min-width: 0; }
+.shipping-form legend { font-size: 18px; font-weight: 700; padding: 0; margin-bottom: 16px; }
+.shipping-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.shipping-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+.shipping-wide { grid-column: 1 / -1; }
+.shipping-grid input, .shipping-grid select { box-sizing: border-box; width: 100%; min-width: 0; padding: 12px; font: inherit; font-size: 16px; color: var(--ink); background: white; border: 1px solid var(--line); border-radius: 8px; }
+.shipping-grid input:focus-visible, .shipping-grid select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.shipping-help { font-size: 13px; color: var(--ink-soft); margin-top: 12px; }
+@media (max-width: 480px) { .shipping-grid { grid-template-columns: 1fr; } }
 .checkout-empty { max-width: 520px; margin: 90px auto; text-align: center; }
 .checkout-empty a { color: var(--accent); font-weight: 600; text-decoration: none; }
 

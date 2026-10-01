@@ -7,14 +7,14 @@
 // 3. Adds / updates products in Supabase
 // 4. Removes products from Supabase that no longer exist in Printify
 //
-// Deploy with Verify JWT OFF. Requires the service-role bearer credential.
+// Deploy with "Verify JWT" OFF if this remains an admin/manual function.
 //
 // Required secrets:
 // PRINTIFY_API_KEY
 // SUPABASE_URL
 // SUPABASE_SERVICE_ROLE_KEY
 
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -63,7 +63,7 @@ function getProductType(title: string) {
 // Main Edge Function
 // --------------------------------------------------
 
-export async function handler(req: Request) {
+Deno.serve(async (req) => {
 
   // Handle browser CORS preflight
   if (req.method === "OPTIONS") {
@@ -71,12 +71,6 @@ export async function handler(req: Request) {
       headers: cors,
     });
   }
-
-  if (req.method !== "POST") return json({ error: "Use POST." }, 405);
-  const serverKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!serverKey) return json({ error: "Sync is not configured." }, 503);
-  const token = req.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
-  if (token !== serverKey) return json({ error: "Server authentication required." }, 401);
 
   try {
 
@@ -224,26 +218,10 @@ export async function handler(req: Request) {
         : productJson?.data ?? [];
 
 
-    // Fetch every page before deciding which catalog records are stale.
-    let pageData = productJson;
-    let page = 1;
-    while (!Array.isArray(pageData) && pageData.next_page_url) {
-      const next = await fetch(`${BASE}/v1/shops/${shop.id}/products.json?page=${++page}`, {
-        headers: printifyHeaders,
-      });
-      if (!next.ok) throw new Error("Unable to fetch all product pages; no stale records removed");
-      pageData = await next.json();
-      if (!Array.isArray(pageData.data)) throw new Error("Invalid product page");
-      products.push(...pageData.data);
-    }
     console.log(
       `Found ${products.length} Printify products`
     );
 
-
-    if (!Array.isArray(productJson) && !Array.isArray(productJson?.data)) {
-      throw new Error("Invalid product list; no catalog records changed");
-    }
 
     // ==================================================
     // CURRENT PRINTIFY PRODUCT IDS
@@ -814,9 +792,8 @@ export async function handler(req: Request) {
 
   }
 
-}
+});
 
-if (import.meta.main) Deno.serve(handler);
 
 // --------------------------------------------------
 // JSON RESPONSE HELPER

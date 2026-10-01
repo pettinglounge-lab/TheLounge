@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=checkout-fit-v2" />
+  <link rel="stylesheet" href="style.css?v=checkout-shipping-v1" />
 </head>
 <body>
 
@@ -20,7 +20,7 @@
 
   <script type="module">
     import { supabase } from "./supabaseClient.js";
-    import { saveOrderDraft } from "./order-draft.js";
+    import { saveOrderDraft, quoteOrderShipping } from "./order-draft.js";
 
     const root = document.getElementById("root");
 
@@ -58,30 +58,76 @@
             <h1>${escapeHtml(order.title || "Custom Pet Portrait")}</h1>
             <p class="sub">Choose your product options.</p>
             <div id="options"><div class="preview-loading"><div class="spinner"></div>Loading options…</div></div>
-
-            <button class="btn btn-primary" id="pay" disabled>Save order</button>
+            <form id="shipping-form" class="shipping-form">
+              <fieldset id="shipping-fields">
+                <legend>Shipping address</legend>
+                <div class="shipping-grid">
+                  <label>First name<input name="first_name" autocomplete="shipping given-name" required maxlength="100" /></label>
+                  <label>Last name<input name="last_name" autocomplete="shipping family-name" required maxlength="100" /></label>
+                  <label class="shipping-wide">Email<input name="email" type="email" autocomplete="shipping email" required maxlength="254" /></label>
+                  <label class="shipping-wide">Phone (optional)<input name="phone" type="tel" autocomplete="shipping tel" maxlength="40" /></label>
+                  <label class="shipping-wide">Country<select name="country" autocomplete="shipping country" required><option value="">Select country</option></select></label>
+                  <label class="shipping-wide">Street address<input name="address1" autocomplete="shipping address-line1" required maxlength="200" /></label>
+                  <label class="shipping-wide">Apartment, suite, etc. (optional)<input name="address2" autocomplete="shipping address-line2" maxlength="200" /></label>
+                  <label>City<input name="city" autocomplete="shipping address-level2" required maxlength="100" /></label>
+                  <label>State / province / region<input name="region" autocomplete="shipping address-level1" maxlength="100" /></label>
+                  <label>Postal / ZIP code<input name="zip" autocomplete="shipping postal-code" maxlength="20" /></label>
+                </div>
+                <p class="shipping-help">Enter state and postal code where applicable. Shipping availability and cost will be confirmed before payment.</p>
+              </fieldset>
+              <button class="btn btn-primary" id="pay" type="submit" disabled>Calculate shipping</button>
+            </form>
             <p class="msg" id="order-save-message" role="status"></p>
-            <p class="secure">Save your artwork and selected options. No payment is collected yet.</p>
+            <p class="secure">Calculate standard shipping for your artwork. No payment is collected yet.</p>
           </div>
         </div>`;
 
-      document.getElementById("pay").addEventListener("click", async () => {
+      const shippingForm = document.getElementById("shipping-form");
+      // ISO country codes are inputs, not a promise of provider availability.
+      const countryCodes = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ");
+      const countryNames = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["en"], { type: "region" }) : null;
+      const countries = countryCodes.map(code => ({ code, name: countryNames?.of(code) || code }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      const countrySelect = shippingForm.elements.namedItem("country");
+      countries.forEach(({ code, name }) => countrySelect.add(new Option(name, code)));
+      try {
+        const previous = JSON.parse(sessionStorage.getItem("ptl_shipping_address"));
+        for (const field of shippingForm.querySelectorAll("input, select")) {
+          if (typeof previous?.[field.name] === "string") field.value = previous[field.name];
+        }
+      } catch { /* Address entry still works when browser storage is unavailable. */ }
+      shippingForm.addEventListener("input", event => {
+        event.target.setCustomValidity?.("");
+        document.getElementById("order-save-message").textContent = "";
+      });
+      shippingForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        for (const field of shippingForm.querySelectorAll("input")) {
+          field.value = field.value.trim();
+        }
+        if (!shippingForm.reportValidity() || !selectedVariant) return;
+        const shipping = Object.fromEntries(new FormData(shippingForm));
         const button = document.getElementById("pay");
         const message = document.getElementById("order-save-message");
         button.disabled = true;
-        button.textContent = "Saving…";
+        button.textContent = "Calculating…";
+        document.getElementById("shipping-fields").disabled = true;
         document.querySelectorAll("#options select").forEach(select => { select.disabled = true; });
         message.textContent = "";
         try {
+          // Retain address entry for retries in this tab.
+          sessionStorage.setItem("ptl_shipping_address", JSON.stringify(shipping));
           const saved = await saveOrderDraft(order, presetPreview);
-          const total = new Intl.NumberFormat("en-US", { style: "currency", currency: saved.currency }).format(saved.subtotalCents / 100);
-          document.getElementById("total").textContent = total;
-          message.textContent = `Order saved. Product subtotal: ${total}. No payment has been collected.`;
+          const quote = await quoteOrderShipping(saved.orderId, shipping);
+          const money = cents => new Intl.NumberFormat("en-US", { style: "currency", currency: quote.currency }).format(cents / 100);
+          document.getElementById("total").textContent = money(quote.subtotalCents);
+          message.textContent = `Standard shipping: ${money(quote.shippingCents)}. Total before tax: ${money(quote.totalBeforeTaxCents)}. No payment has been collected.`;
         } catch (error) {
-          message.textContent = error.message || "Unable to save your order. Please retry.";
+          message.textContent = error.message || "Unable to calculate shipping. Please retry.";
         } finally {
           button.disabled = false;
-          button.textContent = "Save order";
+          button.textContent = "Calculate shipping";
+          document.getElementById("shipping-fields").disabled = false;
           document.querySelectorAll("#options select").forEach(select => { select.disabled = false; });
         }
       });

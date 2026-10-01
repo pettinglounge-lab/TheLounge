@@ -31,3 +31,18 @@ export async function saveOrderDraft(order, preview) {
   sessionStorage.setItem('ptl_saved_order', JSON.stringify(body));
   return body;
 }
+
+export async function quoteOrderShipping(orderId, address) {
+  const result = await supabase.functions.invoke('quote-order-shipping', { body: { orderId, address } });
+  let body = result.data;
+  if (result.error?.context?.json) {
+    try { body = await result.error.context.json(); } catch {}
+  }
+  if (result.error || body?.error || body?.orderId !== orderId ||
+      !Number.isSafeInteger(body.shippingCents) || body.shippingCents < 0 ||
+      !Number.isSafeInteger(body.subtotalCents) || body.subtotalCents <= 0 ||
+      body.totalBeforeTaxCents !== body.subtotalCents + body.shippingCents || body.currency !== 'usd') {
+    throw new Error(body?.error || 'Unable to calculate shipping. Please retry.');
+  }
+  return body;
+}
