@@ -20,20 +20,25 @@
 
   <script type="module">
     import { supabase } from "./supabaseClient.js";
-    import { saveOrderDraft, quoteOrderShipping } from "./order-draft.js";
+    import { saveOrderDraft, quoteOrderShipping, openOrderPayment } from "./order-draft.js";
 
     const root = document.getElementById("root");
 
     // Read what the pet page stashed in the browser.
     let order = null, photoDataUrl = null, presetPreview = null;
     let product = null, variants = [], selectedVariant = null;
+    let shippingQuote = null;
     try {
       order = JSON.parse(sessionStorage.getItem("ptl_order"));
       photoDataUrl = sessionStorage.getItem("ptl_photo");
       presetPreview = sessionStorage.getItem("ptl_preview");
     } catch (e) { /* ignore */ }
 
-    if (!order || !presetPreview) {
+    const paymentReturn = new URLSearchParams(location.search);
+    if (paymentReturn.get("payment") === "success") {
+      root.innerHTML = `<div class="checkout-empty"><h1>Confirming your payment</h1><p id="payment-status" role="status">Checking your order…</p><a href="account.html">View your account →</a></div>`;
+      confirmPayment(paymentReturn.get("draft_id"));
+    } else if (!order || !presetPreview) {
       root.innerHTML = `
         <div class="checkout-empty">
           <h1>Nothing to check out yet</h1>
@@ -42,6 +47,25 @@
         </div>`;
     } else {
       renderCheckout();
+    }
+
+    async function confirmPayment(draftId) {
+      const message = document.getElementById("payment-status");
+      if (!/^[0-9a-f-]{36}$/i.test(draftId || "")) {
+        message.textContent = "Check your account for the payment status.";
+        return;
+      }
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const { data, error } = await supabase.from("orders").select("id,status").eq("draft_id", draftId).maybeSingle();
+        if (data) {
+          message.textContent = "Payment received. Your order has been saved.";
+          sessionStorage.removeItem("ptl_order_draft_attempt");
+          return;
+        }
+        if (error) break;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      message.textContent = "Payment confirmation is still pending. Check your account shortly; please do not pay again.";
     }
 
     function renderCheckout() {
@@ -78,7 +102,7 @@
               <button class="btn btn-primary" id="pay" type="submit" disabled>Calculate shipping</button>
             </form>
             <p class="msg" id="order-save-message" role="status"></p>
-            <p class="secure">Calculate standard shipping for your artwork. No payment is collected yet.</p>
+            <p class="secure">Calculate standard shipping for your artwork. Payment is completed securely with Stripe.</p>
           </div>
         </div>`;
 
@@ -98,6 +122,8 @@
       } catch { /* Address entry still works when browser storage is unavailable. */ }
       shippingForm.addEventListener("input", event => {
         event.target.setCustomValidity?.("");
+        shippingQuote = null;
+        document.getElementById("pay").textContent = "Calculate shipping";
         document.getElementById("order-save-message").textContent = "";
       });
       shippingForm.addEventListener("submit", async event => {
@@ -110,23 +136,29 @@
         const button = document.getElementById("pay");
         const message = document.getElementById("order-save-message");
         button.disabled = true;
-        button.textContent = "Calculating…";
+        button.textContent = shippingQuote ? "Opening payment…" : "Calculating…";
         document.getElementById("shipping-fields").disabled = true;
         document.querySelectorAll("#options select").forEach(select => { select.disabled = true; });
         message.textContent = "";
         try {
           // Retain address entry for retries in this tab.
           sessionStorage.setItem("ptl_shipping_address", JSON.stringify(shipping));
+          if (shippingQuote) {
+            await openOrderPayment(shippingQuote.orderId, shipping, shippingQuote.shippingCents);
+            return;
+          }
           const saved = await saveOrderDraft(order, presetPreview);
           const quote = await quoteOrderShipping(saved.orderId, shipping);
+          shippingQuote = quote;
           const money = cents => new Intl.NumberFormat("en-US", { style: "currency", currency: quote.currency }).format(cents / 100);
           document.getElementById("total").textContent = money(quote.subtotalCents);
-          message.textContent = `Standard shipping: ${money(quote.shippingCents)}. Total before tax: ${money(quote.totalBeforeTaxCents)}. No payment has been collected.`;
+          message.textContent = `Standard shipping: ${money(quote.shippingCents)}. Total before tax: ${money(quote.totalBeforeTaxCents)}. Tax will be calculated at payment.`;
         } catch (error) {
+          if (["quote_changed", "new_draft_required"].includes(error.code)) shippingQuote = null;
           message.textContent = error.message || "Unable to calculate shipping. Please retry.";
         } finally {
           button.disabled = false;
-          button.textContent = "Calculate shipping";
+          button.textContent = shippingQuote ? "Continue to payment" : "Calculate shipping";
           document.getElementById("shipping-fields").disabled = false;
           document.querySelectorAll("#options select").forEach(select => { select.disabled = false; });
         }
@@ -183,6 +215,8 @@
     }
 
     function chooseVariant() {
+      shippingQuote = null;
+      document.getElementById("pay").textContent = "Calculate shipping";
       document.getElementById("order-save-message").textContent = "";
       selectedVariant = variants.find(v => String(v.id) === document.getElementById("variant").value);
       const quantity = Number(document.getElementById("quantity").value);

@@ -64,8 +64,18 @@ export async function handler(req: Request) {
       item?.price?.unit_amount !== draft.unit_price_cents) {
       return json(409, { error: "Payment does not match the saved order. Review required." });
     }
-    const shipping = session.collected_information?.shipping_details ?? session.shipping_details;
-    const address = shipping?.address;
+    const { data: checkout, error: checkoutError } = await admin.from("order_checkouts")
+      .select("stripe_session_id,address,shipping_cents").eq("draft_id", draft.id).single();
+    if (checkoutError || !checkout) throw new Error("checkout_lookup_failed");
+    // A webhook can arrive before the creator saves its response. Retry then.
+    if (!checkout.stripe_session_id) throw new Error("checkout_session_pending");
+    if (checkout.stripe_session_id !== sessionId || checkout.shipping_cents !== details.amount_shipping) {
+      return json(409, { error: "Payment shipping does not match checkout. Review required." });
+    }
+    const savedAddress = checkout.address;
+    const shipping = { name: savedAddress.first_name + " " + savedAddress.last_name };
+    const address = { line1: savedAddress.address1, line2: savedAddress.address2,
+      city: savedAddress.city, state: savedAddress.region, postal_code: savedAddress.zip, country: savedAddress.country };
     const email = session.customer_details?.email;
     if (!shipping?.name || !address?.line1 || !address?.country || !email) {
       return json(409, { error: "Shipping details or customer email are missing." });

@@ -46,3 +46,17 @@ export async function quoteOrderShipping(orderId, address) {
   }
   return body;
 }
+
+export async function openOrderPayment(orderId, address, shippingCents) {
+  const result = await supabase.functions.invoke('create-checkout', { body: { orderId, address, shippingCents } });
+  let body = result.data;
+  if (result.error?.context?.json) {
+    try { body = await result.error.context.json(); } catch {}
+  }
+  if (result.error || body?.error || !body?.url) {
+    if (body?.code === 'new_draft_required') sessionStorage.removeItem('ptl_order_draft_attempt');
+    throw Object.assign(new Error(body?.error || 'Unable to open payment. Please retry.'), { code: body?.code });
+  }
+  if (new URL(body.url).origin !== 'https://checkout.stripe.com') throw new Error('Invalid payment destination.');
+  window.location.assign(body.url);
+}

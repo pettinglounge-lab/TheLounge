@@ -27,6 +27,8 @@ Deno.test("finalization verifies payments before writing and preserves replay re
   let writes = 0;
   let reads = 0;
   let rpcFails = false;
+  let checkout = { stripe_session_id: sessionId, shipping_cents: 500,
+    address: { first_name: "Test", last_name: "Customer", address1: "1 Test Street", country: "US" } };
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = input instanceof Request ? input.url : String(input);
     reads++;
@@ -35,6 +37,7 @@ Deno.test("finalization verifies payments before writing and preserves replay re
       currency: "usd", amount_subtotal: 5000, price: { unit_amount: 2500 } }] };
     else if (url.startsWith("https://api.stripe.com/")) body = session;
     else if (url.includes("/rest/v1/order_drafts?")) body = draft;
+    else if (url.includes("/rest/v1/order_checkouts?")) body = checkout;
     else if (url.endsWith("/rpc/finalize_paid_order")) {
       writes++;
       const args = JSON.parse(String(init?.body));
@@ -59,9 +62,13 @@ Deno.test("finalization verifies payments before writing and preserves replay re
     session.amount_total = 1;
     assert((await call()).status === 409 && writes === 0, "Reject wrong total");
     session = structuredClone(paid);
-    session.collected_information.shipping_details.address.line1 = "";
+    checkout.address.address1 = "";
     assert((await call()).status === 409 && writes === 0, "Reject missing shipping address");
     session = structuredClone(paid);
+    checkout.address.address1 = "1 Test Street";
+    checkout.shipping_cents = 1;
+    assert((await call()).status === 409 && writes === 0, "Reject shipping mismatch");
+    checkout.shipping_cents = 500;
     const first = await call();
     assert(first.status === 200 && (await first.json()).replayed === false, "Create verified order");
     const replay = await call();
