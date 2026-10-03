@@ -186,6 +186,7 @@
     const editGenerate = document.getElementById("edit-generate");
     editGenerate.textContent = `Save & generate (${GENERATION_COST} credits)`;
 
+    const TSHIRT_PROMPT_EXAMPLE = "Example: Turn the dogs in my photo into a playful vintage Halloween illustration for the front of a T-shirt. Keep each dog recognizable, including its face, fur colors and markings. Dress one as a friendly ghost and the other in a pumpkin costume. Add a few small bats and autumn leaves around them. Use warm orange, cream and muted purple with bold, clean outlines. Center the design and leave space around the edges. Use a transparent background with no rectangular backdrop. Add the words ‘Boo Crew’ above the dogs in clear retro lettering. Create only the graphic, without a shirt or model.";
     const PROMPT_EXAMPLES = {
       pet: "Describe the artwork you want, e.g. ‘soft floral background, warm colors, add the name Biscuit’",
       home: "Describe the artwork you want, e.g. ‘a cozy watercolor of this home in autumn, with warm porch lights and fall leaves’",
@@ -236,7 +237,7 @@
         document.getElementById("shirt-color").value = variants.some(v => v.color === "White") ? "White" : variants[0].color;
         populateShirtSizes();
       }
-      note.placeholder = selectedType === "t-shirt" ? "Describe your T-shirt design, including the subject, colors, background and any lettering." : PROMPT_EXAMPLES[selectedCategory];
+      note.placeholder = selectedType === "t-shirt" ? TSHIRT_PROMPT_EXAMPLE : PROMPT_EXAMPLES[selectedCategory];
       createBtn.textContent = selectedType === "greeting-card" ? "Continue to card message" : selectedType === "t-shirt" ? `Generate T-shirt artwork (${GENERATION_COST} credits)` : "Create project";
       categoryStep.hidden = true; detailsStep.hidden = false; cardMessageStep.hidden = true;
     }));
@@ -246,7 +247,7 @@
       const select = document.getElementById("shirt-size");
       const oldSize = select.selectedOptions[0]?.dataset.size;
       select.replaceChildren(...shirtVariants(selectedProduct?.variants).filter(v => v.color === color).map(v => {
-        const option = new Option(`${v.size} · $${v.price.toFixed(2)}`, v.id);
+        const option = new Option(v.size, v.id);
         option.dataset.size = v.size;
         option.selected = v.size === oldSize;
         return option;
@@ -491,6 +492,7 @@
       showEditorArtwork(project);
       showCredits();
       editPrompt.value = project.config?.prompt || project.config?.note || "";
+      editPrompt.placeholder = project.config?.productType === "t-shirt" ? TSHIRT_PROMPT_EXAMPLE : PROMPT_EXAMPLES[project.config?.category] || "Describe the artwork you want.";
       editMessage.value = project.config?.inside_message || "";
       document.getElementById("edit-card-fields").hidden = project.config?.productType !== "greeting-card";
       editMsg.textContent = "Saving changes keeps your current image. Generate to apply your new description.";
