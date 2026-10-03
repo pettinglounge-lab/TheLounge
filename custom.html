@@ -111,7 +111,7 @@
         <div class="project-actions">
           <button class="btn btn-outline btn-sm" id="edit-cancel" type="button">Close</button>
           <button class="btn btn-outline btn-sm" id="edit-save" type="submit">Save changes</button>
-          <button class="btn btn-outline btn-sm" id="edit-review" type="button" hidden>Continue to checkout</button>
+          <button class="btn btn-outline btn-sm" id="edit-review" type="button" hidden>Review artwork</button>
           <button class="btn btn-primary btn-sm" id="edit-generate" type="button">Save &amp; generate</button>
         </div>
       </form>
@@ -120,7 +120,7 @@
     <dialog id="project-review" class="project-editor project-review" aria-labelledby="review-title">
       <p class="eyebrow">STEP 2 OF 2</p>
       <h2 id="review-title">Review your artwork</h2>
-      <p class="modal-sub">Take a look at the full image. Choose your product options next at checkout.</p>
+      <p class="modal-sub">Happy with your design? Continue to checkout, or choose Change prompt to adjust it and generate another version.</p>
       <div id="shirt-review" hidden></div>
       <img id="review-image" class="review-image" alt="Your full generated artwork" />
       <div id="review-message-wrap" hidden>
@@ -130,7 +130,7 @@
       <p id="review-msg" class="msg" role="status"></p>
       <div class="project-actions">
         <button type="button" class="btn btn-outline btn-sm" id="review-close">Close</button>
-        <button type="button" class="btn btn-outline btn-sm" id="review-edit">Back to editing</button>
+        <button type="button" class="btn btn-outline btn-sm" id="review-edit">Change prompt</button>
         <button type="button" class="btn btn-primary btn-sm" id="review-checkout" disabled>Continue to checkout</button>
       </div>
     </dialog>
@@ -537,12 +537,13 @@
         if (render) {
           showEditorArtwork(editingProject);
           editGenerate.textContent = `Generate again (${GENERATION_COST} credits)`;
-          editMsg.textContent = "Your artwork is saved. Edit your description and generate again, or continue to checkout.";
+          editMsg.textContent = "Your artwork is saved. Edit your description and generate again, or review your artwork before checkout.";
         } else {
           editMsg.textContent = "Changes saved. Generate again to apply description changes to the image.";
         }
         if (reviewAfter && editorImageReady) {
-          startCheckout(editingProject, document.getElementById("edit-image").src, editMsg);
+          editor.close();
+          openReview(editingProject.id);
         }
       } catch (e) {
         editMsg.textContent = "Unable to save: " + e.message;
