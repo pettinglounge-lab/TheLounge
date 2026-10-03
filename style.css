@@ -731,3 +731,11 @@ a { color: inherit; }
 .catalog-product .catalog-details { display: block; }
 .catalog-product-label { display: block; font-family: "DM Serif Display", Georgia, serif; font-size: 32px; }
 #artPrompt { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; resize: vertical; }
+
+/* Custom creation progress and dialog layout */
+.project-editor [hidden] { display: none !important; }
+.project-editor .custom-credit-status { position: static; margin: 0 0 20px; text-align: left; }
+.creation-progress { text-align: center; padding: 48px 28px; }
+.creation-progress .spinner { margin: 0 auto 24px; }
+.creation-progress h2 { margin: 0 0 16px; }
+.creation-progress p { color: var(--ink-soft); line-height: 1.6; }

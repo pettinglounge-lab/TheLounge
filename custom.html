@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=custom-editor-v7" />
+  <link rel="stylesheet" href="style.css?v=custom-generation-v8" />
 </head>
 <body>
 
@@ -80,6 +80,16 @@
         </div>
       </div>
     </div>
+
+    <dialog id="creation-progress" class="project-editor creation-progress" aria-labelledby="creation-title">
+      <div id="creation-spinner" class="spinner" aria-hidden="true"></div>
+      <h2 id="creation-title">Creating your artwork</h2>
+      <p id="creation-status" role="status" aria-live="polite">Your design is generating. This can take a couple of minutes.</p>
+      <div id="creation-recovery" class="project-actions" hidden>
+        <button id="creation-close" type="button" class="btn btn-outline">Close</button>
+        <button id="creation-retry" type="button" class="btn btn-primary">Retry generation</button>
+      </div>
+    </dialog>
 
     <dialog id="project-editor" class="project-editor custom-step" aria-labelledby="editor-title">
       <form id="editor-form">
@@ -324,13 +334,7 @@
         overlay.classList.remove("open");
         if (generateImmediately) {
           savedProjects.set(ins.data.id, ins.data);
-          openEditor(ins.data.id);
-          await saveEdits(true);
-          const rendered = savedProjects.get(ins.data.id);
-          if (rendered?.render_path) {
-            editor.close();
-            openReview(ins.data.id);
-          }
+          await renderCreatedProject(ins.data.id);
         } else {
           await loadSaved();
         }
@@ -343,6 +347,40 @@
         createBtn.disabled = !selectedFile;
         saveCardBtn.textContent = "Create project";
         saveCardBtn.disabled = !selectedFile;
+      }
+    }
+
+    const creationDialog = document.getElementById("creation-progress");
+    let creationBusy = false, creationProjectId = null;
+    creationDialog.addEventListener("cancel", event => { if (creationBusy) event.preventDefault(); });
+    document.getElementById("creation-close").addEventListener("click", () => { if (!creationBusy) creationDialog.close(); });
+    document.getElementById("creation-retry").addEventListener("click", () => renderCreatedProject(creationProjectId));
+
+    async function renderCreatedProject(id) {
+      if (!id || creationBusy) return;
+      creationBusy = true;
+      creationProjectId = id;
+      const status = document.getElementById("creation-status");
+      const spinner = document.getElementById("creation-spinner");
+      const recovery = document.getElementById("creation-recovery");
+      document.getElementById("creation-title").textContent = "Creating your artwork";
+      status.textContent = "Your design is generating. This can take a couple of minutes.";
+      spinner.hidden = false;
+      recovery.hidden = true;
+      if (!creationDialog.open) creationDialog.showModal();
+      try {
+        let failure = "Generation did not finish. Retry to recover the same attempt.";
+        const generated = await generate({ dataset: { id }, disabled: false, textContent: "" }, message => { failure = message; });
+        if (!generated || !savedProjects.get(id)?.render_path) throw new Error(failure);
+        creationDialog.close();
+        openReview(id);
+      } catch (error) {
+        document.getElementById("creation-title").textContent = "Your draft is saved";
+        status.textContent = error.message || "Generation was interrupted. Please retry.";
+        spinner.hidden = true;
+        recovery.hidden = false;
+      } finally {
+        creationBusy = false;
       }
     }
 
@@ -632,7 +670,7 @@
     }
 
     // ---- call the edge function to render ----
-    async function generate(btn) {
+    async function generate(btn, onError = null) {
       const portraitId = btn.dataset.id;
       if (pendingProjects.has(portraitId)) return;
       pendingProjects.add(portraitId);
@@ -665,7 +703,8 @@
         await refreshCredits();
         return true;
       } catch (e) {
-        alert("Render failed: " + (e.message || e));
+        if (onError) onError(e.message || String(e));
+        else alert("Render failed: " + (e.message || e));
         return false;
       } finally {
         pendingProjects.delete(portraitId);
