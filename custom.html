@@ -227,7 +227,7 @@
         populateShirtSizes();
       }
       note.placeholder = selectedType === "t-shirt" ? "Describe your T-shirt design, including the subject, colors, background and any lettering." : PROMPT_EXAMPLES[selectedCategory];
-      createBtn.textContent = selectedType === "greeting-card" ? "Continue to card message" : "Create project";
+      createBtn.textContent = selectedType === "greeting-card" ? "Continue to card message" : selectedType === "t-shirt" ? `Generate T-shirt artwork (${GENERATION_COST} credits)` : "Create project";
       categoryStep.hidden = true; detailsStep.hidden = false; cardMessageStep.hidden = true;
     }));
 
@@ -279,9 +279,12 @@
     });
     saveCardBtn.addEventListener("click", saveProject);
 
+    let creatingProject = false;
     // ---- create the project ----
     async function saveProject() {
-      if (!selectedFile) return;
+      if (!selectedFile || creatingProject) return;
+      creatingProject = true;
+      const generateImmediately = selectedType === "t-shirt";
       const activeMsg = selectedType === "greeting-card" ? cardMsg : msg;
       createBtn.disabled = true; createBtn.textContent = "Creating…";
       saveCardBtn.disabled = true; saveCardBtn.textContent = "Creating…";
@@ -311,20 +314,32 @@
             inside_message: selectedType === "greeting-card" ? cardMessage.value.trim() || null : null,
           },
           status: "draft",
-        });
+        }).select("id, photo_path, render_path, config, status, created_at").single();
         if (ins.error) throw ins.error;
 
         selectedFile = null; fileIn.value = ""; note.value = ""; cardMessage.value = "";
         drop.classList.remove("has-file"); fname.textContent = "";
         activeMsg.textContent = "✓ Project created. Choose “Edit project” below to review your details and generate artwork.";
         activeMsg.className = "msg ok";
-        loadSaved();
         overlay.classList.remove("open");
+        if (generateImmediately) {
+          savedProjects.set(ins.data.id, ins.data);
+          openEditor(ins.data.id);
+          await saveEdits(true);
+          const rendered = savedProjects.get(ins.data.id);
+          if (rendered?.render_path) {
+            editor.close();
+            openReview(ins.data.id);
+          }
+        } else {
+          await loadSaved();
+        }
       } catch (e) {
         activeMsg.textContent = "Something went wrong: " + e.message;
         activeMsg.className = "msg err";
       } finally {
-        createBtn.textContent = selectedType === "greeting-card" ? "Continue to card message" : "Create project";
+        creatingProject = false;
+        createBtn.textContent = selectedType === "greeting-card" ? "Continue to card message" : selectedType === "t-shirt" ? `Generate T-shirt artwork (${GENERATION_COST} credits)` : "Create project";
         createBtn.disabled = !selectedFile;
         saveCardBtn.textContent = "Create project";
         saveCardBtn.disabled = !selectedFile;
