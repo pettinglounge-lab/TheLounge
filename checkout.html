@@ -19,6 +19,7 @@
   </main>
 
   <script type="module">
+    import { isTshirt, shirtVariants, shirtMockup } from "./tshirt.js";
     import { supabase } from "./supabaseClient.js";
     import { saveOrderDraft, quoteOrderShipping, openOrderPayment } from "./order-draft.js";
 
@@ -171,7 +172,7 @@
     async function loadOptions() {
       const box = document.getElementById("options");
       let { data, error } = await supabase.from("products")
-        .select("product_type, variants, available")
+        .select("title, product_type, variants, available")
         .eq("printify_product_id", order.printify_product_id)
         .eq("category", order.category)
         .maybeSingle();
@@ -179,7 +180,7 @@
       // category rows have been synced. Prefer their category whenever present.
       if (!error && !data && order.category !== "pet") {
         ({ data, error } = await supabase.from("products")
-          .select("product_type, variants, available")
+          .select("title, product_type, variants, available")
           .eq("printify_product_id", order.printify_product_id)
           .eq("category", "pet")
           .maybeSingle());
@@ -189,19 +190,25 @@
         return;
       }
       product = data;
-      variants = data.variants.map(v => {
+      if (isTshirt(data)) product.product_type = "t-shirt";
+      variants = product.product_type === "t-shirt" ? shirtVariants(data.variants) : data.variants.map(v => {
         const parts = String(v.size || "").split(" / ").map(s => s.trim());
         return { id: v.id, price: Number(v.price), size: parts[0] || "Standard", detail: parts.slice(1).join(" / "), color: parts.find(p => ["Natural", "White", "Espresso", "Black"].includes(p)) || "" };
       });
+      if (!variants.length) { box.textContent = "No product options are available."; return; }
       const colors = [...new Set(variants.map(v => v.color).filter(Boolean))];
       box.innerHTML = `
-        ${colors.length ? `<label class="field-label" for="color">Frame color</label><select class="select" id="color">${colors.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")}</select>` : ""}
+        ${colors.length ? `<label class="field-label" for="color">${product.product_type === "t-shirt" ? "Shirt color" : "Frame color"}</label><select class="select" id="color">${colors.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")}</select>` : ""}
         <label class="field-label" for="variant">${colors.length ? "Size" : "Product option"}</label><select class="select" id="variant"></select>
         <label class="field-label" for="quantity">Quantity</label><select class="select" id="quantity">${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join("")}</select>
         <div class="row total"><span>Product subtotal</span><span id="total">—</span></div>`;
       document.getElementById("color")?.addEventListener("change", () => { populateVariants(); showPreview(); });
       document.getElementById("variant").addEventListener("change", chooseVariant);
       document.getElementById("quantity").addEventListener("change", chooseVariant);
+      const savedVariant = variants.find(v => String(v.id) === String(order.variantId));
+      const colorSelect = document.getElementById("color");
+      if (colorSelect && savedVariant?.color) colorSelect.value = savedVariant.color;
+      document.getElementById("quantity").value = String([1,2,3,4,5].includes(order.quantity) ? order.quantity : 1);
       populateVariants();
       showPreview();
       document.getElementById("pay").disabled = false;
@@ -211,6 +218,8 @@
       const color = document.getElementById("color")?.value;
       const matches = color ? variants.filter(v => v.color === color) : variants;
       document.getElementById("variant").innerHTML = matches.map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.size)}${v.detail ? ` · ${escapeHtml(v.detail)}` : ""} · $${v.price.toFixed(2)}</option>`).join("");
+      const retained = matches.find(v => String(v.id) === String(order.variantId)) || matches.find(v => v.size === order.size);
+      if (retained) document.getElementById("variant").value = String(retained.id);
       chooseVariant();
     }
 
@@ -222,7 +231,7 @@
       const quantity = Number(document.getElementById("quantity").value);
       if (!selectedVariant) return;
       document.getElementById("total").textContent = `$${(selectedVariant.price * quantity).toFixed(2)}`;
-      Object.assign(order, { variantId: selectedVariant.id, size: selectedVariant.size, frameColor: selectedVariant.color || null, price: selectedVariant.price, quantity });
+      Object.assign(order, { product_type: product.product_type, shirtColor: product.product_type === "t-shirt" ? selectedVariant.color : null, variantId: selectedVariant.id, size: selectedVariant.size, frameColor: selectedVariant.color || null, price: selectedVariant.price, quantity });
       sessionStorage.setItem("ptl_order", JSON.stringify(order));
     }
 
@@ -232,7 +241,9 @@
       if (presetPreview) {
         const color = document.getElementById("color")?.value?.toLowerCase() || "black";
         const type = product?.product_type || order.product_type;
-        const config = type === "framed-poster"
+        const config = type === "t-shirt"
+          ? shirtMockup(document.getElementById("color")?.value || order.shirtColor)
+          : type === "framed-poster"
           ? { file: `frame${color}.png`, opening: "top:11%;left:20%;width:60%;height:78%;" }
           : type === "greeting-card"
             ? { file: "card.png", opening: "top:15%;left:26%;width:48%;height:70%;" }

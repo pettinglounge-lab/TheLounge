@@ -48,6 +48,11 @@
           <p class="eyebrow" id="details-step-count">STEP 2 OF 2</p>
           <h2 id="custom-title">Create your portrait</h2>
           <p class="modal-sub">Upload a reference image and describe the result you want.</p>
+          <div id="shirt-options" hidden>
+            <img id="shirt-blank" src="assets/t/t4.png" alt="Selected blank T-shirt" style="width:180px;display:block;margin:auto;" />
+            <label class="field-label" for="shirt-color">Shirt color</label><select class="select" id="shirt-color"></select>
+            <label class="field-label" for="shirt-size">Size</label><select class="select" id="shirt-size"></select>
+          </div>
           <label class="field-label">Reference image</label>
           <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a reference image">
             <div><strong>Upload a photo</strong> or click to browse</div>
@@ -106,6 +111,7 @@
       <p class="eyebrow">STEP 2 OF 2</p>
       <h2 id="review-title">Review your artwork</h2>
       <p class="modal-sub">Take a look at the full image. Choose your product options next at checkout.</p>
+      <div id="shirt-review" hidden></div>
       <img id="review-image" class="review-image" alt="Your full generated artwork" />
       <div id="review-message-wrap" hidden>
         <h3>Inside card message</h3>
@@ -127,6 +133,7 @@
   </main>
 
   <script type="module">
+    import { isTshirt, shirtVariants, shirtMockup } from "./tshirt.js";
     import { supabase } from "./supabaseClient.js";
     import { GENERATION_COST, canAffordGeneration, configureCreditProfile, creditBalanceText, dailyCreditAllowance, getDailyCredits, refreshCredits, creditStatusText } from "./credits.js";
 
@@ -187,7 +194,7 @@
       const { data } = await supabase.from("products").select("*");
       allProducts = data || [];
     }
-    loadCatalog();
+    const catalogReady = loadCatalog();
 
     document.querySelectorAll(".custom-product").forEach(btn => btn.addEventListener("click", () => {
       note.value = ""; createBtn.disabled = true; drop.classList.remove("has-file");
@@ -205,15 +212,38 @@
     overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("open"); });
     document.getElementById("back").addEventListener("click", () => { categoryStep.hidden = false; detailsStep.hidden = true; cardMessageStep.hidden = true; });
     document.getElementById("card-back").addEventListener("click", () => { detailsStep.hidden = false; cardMessageStep.hidden = true; });
-    document.querySelectorAll(".category-choice").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll(".category-choice").forEach(btn => btn.addEventListener("click", async () => {
+      await catalogReady;
       selectedCategory = btn.dataset.category;
-      selectedProduct = allProducts.find(p => p.category === selectedCategory && p.product_type === selectedType && p.available && (p.variants || []).length);
+      selectedProduct = allProducts.find(p => p.category === selectedCategory && (selectedType === "t-shirt" ? isTshirt(p) : p.product_type === selectedType) && p.available && (p.variants || []).length);
       if (!selectedProduct) { categoryMsg.textContent = "This product is not available for that category yet."; categoryMsg.className = "msg err"; return; }
       document.getElementById("custom-title").textContent = CUSTOM_PRODUCT_TITLES[selectedType] || "Custom Product";
-      note.placeholder = PROMPT_EXAMPLES[selectedCategory];
+      document.getElementById("shirt-options").hidden = selectedType !== "t-shirt";
+      if (selectedType === "t-shirt") {
+        const variants = shirtVariants(selectedProduct.variants);
+        if (!variants.length) { categoryMsg.textContent = "No shirt sizes are available right now."; return; }
+        document.getElementById("shirt-color").replaceChildren(...[...new Set(variants.map(v => v.color))].map(c => new Option(c, c)));
+        document.getElementById("shirt-color").value = variants.some(v => v.color === "White") ? "White" : variants[0].color;
+        populateShirtSizes();
+      }
+      note.placeholder = selectedType === "t-shirt" ? "Describe your T-shirt design, including the subject, colors, background and any lettering." : PROMPT_EXAMPLES[selectedCategory];
       createBtn.textContent = selectedType === "greeting-card" ? "Continue to card message" : "Create project";
       categoryStep.hidden = true; detailsStep.hidden = false; cardMessageStep.hidden = true;
     }));
+
+    function populateShirtSizes() {
+      const color = document.getElementById("shirt-color").value;
+      const select = document.getElementById("shirt-size");
+      const oldSize = select.selectedOptions[0]?.dataset.size;
+      select.replaceChildren(...shirtVariants(selectedProduct?.variants).filter(v => v.color === color).map(v => {
+        const option = new Option(`${v.size} · $${v.price.toFixed(2)}`, v.id);
+        option.dataset.size = v.size;
+        option.selected = v.size === oldSize;
+        return option;
+      }));
+      document.getElementById("shirt-blank").src = "assets/t/" + shirtMockup(color).file;
+    }
+    document.getElementById("shirt-color").addEventListener("change", populateShirtSizes);
 
     cardMessage.addEventListener("input", () => {
       cardMessagePreview.textContent = cardMessage.value.trim() || "Your message here";
@@ -270,7 +300,11 @@
             note: note.value.trim() || null,
             prompt: note.value.trim() || null,
             category: selectedCategory,
-            productType: selectedProduct.product_type,
+            productType: selectedType,
+            ...(selectedType === "t-shirt" ? {
+              variantId: Number(document.getElementById("shirt-size").value),
+              shirtColor: document.getElementById("shirt-color").value,
+            } : {}),
             printify_product_id: selectedProduct.printify_product_id,
             product_title: selectedProduct.title || null,
             style: null,
@@ -483,6 +517,15 @@
       reviewImage.onload = () => { checkoutBtn.disabled = false; reviewMsg.textContent = ""; };
       reviewImage.onerror = () => { checkoutBtn.disabled = true; reviewMsg.textContent = "Your artwork could not load. Close this preview and try again."; };
       reviewImage.src = reviewedImageUrl;
+      const shirt = project.config?.productType === "t-shirt";
+      const shirtReview = document.getElementById("shirt-review");
+      shirtReview.hidden = !shirt;
+      reviewImage.hidden = shirt;
+      reviewImage.style.display = shirt ? "none" : "block";
+      if (shirt) {
+        const mockup = shirtMockup(project.config.shirtColor);
+        shirtReview.innerHTML = `<div class="mockup-stage"><img class="mockup-base" src="assets/t/${mockup.file}" alt="T-shirt preview" /><img class="mockup-art" style="${mockup.opening}display:block;" src="${escapeHtml(reviewedImageUrl)}" alt="Your design on the shirt" /></div><p class="sub">Placement preview. Choose or change your size and color at checkout.</p>`;
+      }
       const message = project.config?.inside_message;
       document.getElementById("review-message-wrap").hidden = project.config?.productType !== "greeting-card" || !message;
       document.getElementById("review-message").textContent = message || "";
@@ -510,6 +553,8 @@
           portraitId: project.id,
           category: config.category,
           product_type: config.productType,
+          variantId: config.variantId,
+          shirtColor: config.shirtColor,
           printify_product_id: config.printify_product_id,
           title: config.product_title || CUSTOM_PRODUCT_TITLES[config.productType] || "Custom Portrait",
           inside_message: config.inside_message || null,
