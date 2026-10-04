@@ -57,6 +57,7 @@ export async function handler(req: Request) {
     const form = new FormData();
     form.set("image", photo.data, "reference");
     form.set("productType", category);
+    if (config.productType === "t-shirt") form.set("artworkProduct", "t-shirt");
     form.set("style", typeof config.style === "string" ? config.style : "");
     form.set("note", prompt); // Customer's complete saved text accompanies their photo.
     form.set("requestId", requestId);
