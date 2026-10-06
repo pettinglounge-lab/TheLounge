@@ -6,6 +6,7 @@ Deno.test("shipping uses owned draft values, handles free rates and fails closed
   const previous = Object.fromEntries(Object.keys(env).map(k => [k, Deno.env.get(k)]));
   Object.entries(env).forEach(([k,v]) => Deno.env.set(k,v));
   let owned = true, rate: unknown = 0, providerCalls = 0;
+  let shopMode = "match";
   const assert = (condition: unknown) => { if (!condition) throw new Error("Assertion failed"); };
   globalThis.fetch = async (input, init) => {
     const url = String(input);
@@ -13,6 +14,13 @@ Deno.test("shipping uses owned draft values, handles free rates and fails closed
     if (url.includes("/rest/v1/order_drafts")) {
       assert(url.includes("user_id=eq." + id));
       return Response.json(owned ? { id, product_snapshot: { printify_product_id: "saved-product", variant_id: 55 }, quantity: 2, subtotal_cents: 2000, currency: "usd" } : null);
+    }
+    if (url.endsWith("/shops.json")) return Response.json([{ id: 999 }, { id: 123 }]);
+    if (url.includes("/products/saved-product.json")) {
+      if (shopMode === "wrong-shop-400" && url.includes("/999/")) return new Response("Bad request", { status: 400 });
+      if (shopMode === "failure") return new Response("Unavailable", { status: 500 });
+      if (shopMode === "missing" || url.includes("/999/")) return new Response("Missing", { status: 404 });
+      return Response.json({ id: "saved-product", shop_id: 123 });
     }
     assert(url === "https://api.printify.com/v1/shops/123/orders/shipping.json");
     providerCalls++;
@@ -34,6 +42,16 @@ Deno.test("shipping uses owned draft values, handles free rates and fails closed
     assert((await (await handler(request())).json()).totalBeforeTaxCents === 2750);
     rate = "750";
     assert((await handler(request())).status === 422);
+    Deno.env.delete("PRINTIFY_SHOP_ID");
+    rate = 750;
+    assert((await handler(request())).status === 200);
+    shopMode = "wrong-shop-400";
+    assert((await handler(request())).status === 200);
+    const beforeLookupErrors = providerCalls;
+    shopMode = "missing";
+    assert((await handler(request())).status === 409 && providerCalls === beforeLookupErrors);
+    shopMode = "failure";
+    assert((await handler(request())).status === 503 && providerCalls === beforeLookupErrors);
     owned = false;
     const before = providerCalls;
     assert((await handler(request())).status === 404 && providerCalls === before);
