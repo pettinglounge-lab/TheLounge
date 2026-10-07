@@ -21,205 +21,431 @@ const IMAGE_QUALITY = "high";
 //    is sent, the first style for that category is used. ──
 const STYLES: Record<string, Record<string, string>> = {
   pet: {
-"White Background":
-`Create a museum-quality soft pastel portrait of the exact pet shown in the uploaded reference image.
 
-REFERENCE FIDELITY — HIGHEST PRIORITY:
-The pet must be immediately recognizable as the same individual animal from the reference photo. Preserve the exact facial proportions, muzzle shape, nose shape and color, eye shape and color, ear shape and position, fur length and texture, coat colors, distinctive markings, whiskers, and natural expression. Do not beautify, simplify, exaggerate, or invent markings or physical features. Preserve the pet's breed characteristics and individual personality.
+"Halloween T-Shirt":
 
-ART STYLE:
-Realistic fine-art soft pastel illustration with sophisticated hand-rendered detail. Use rich chalky pigment, delicate layered pastel strokes, softly blended fur, individually suggested fine hairs around the face and ears, subtle tonal transitions, and beautifully rendered lifelike eyes with natural catchlights. The finished piece should feel like an expensive commissioned pet portrait created by a professional pastel artist, not a photograph and not a cartoon.
-
-POSE & COMPOSITION:
-Front-facing or naturally oriented toward the viewer based on the reference image. Create a centered head-and-upper-chest portrait with anatomically correct proportions.
-
-The pet should rise naturally from the bottom edge of the artwork and occupy approximately the lower two-thirds of the canvas, leaving generous clean white negative space above the head. Keep comfortable breathing room around both ears.
-
-BACKGROUND:
-Completely seamless, uniform pure white (#FFFFFF) extending edge-to-edge. No visible floor, horizon, gradient, vignette, texture, cast shadow, environmental shadow, scenery, or decorative elements.
-
-LIGHTING:
-Soft, flattering studio-style illumination with gentle dimensionality across the fur and face. Avoid harsh shadows or blown highlights.
-
-FINAL AESTHETIC:
-Elegant, timeless, warm, refined, emotionally expressive, premium wall-art quality, highly detailed and print-ready.
-
-DO NOT INCLUDE:
-No mats, signatures, logos, watermarks, props, furniture, scenery, extra animals, extra limbs, distorted anatomy, human features, costumes, collars that are not present in the reference, or invented markings.`,
-
-"Custom":
-`Create premium, print-ready artwork from the uploaded reference photograph using the customer's description below. Preserve the recognizable identity, proportions, and important details of the subjects unless the customer explicitly requests a change. Follow the requested artistic medium, background, composition, and lettering. If no description is supplied, create a refined hand-rendered soft pastel interpretation of the photograph. Do not include a mat, signature, or watermark. Do not add text unless requested.`,
-
-"Royal Renaissance":
-
-`Create a breathtaking museum-quality soft pastel Renaissance portrait of the exact pet shown in the uploaded reference image, reimagined as European nobility.
+`Create a premium, print-ready Halloween soft pastel illustration of the exact pet shown in the uploaded reference image, transformed into a charming, playful Halloween-themed T-shirt graphic.
 
 REFERENCE FIDELITY — HIGHEST PRIORITY:
 
-The face and identity of the pet must remain unmistakably faithful to the reference photograph. Preserve the exact facial proportions, muzzle, nose, eye shape and color, ear shape and position, coat color, fur texture, distinctive markings, whiskers, and characteristic expression.
+The pet must remain immediately recognizable as the same individual animal shown in the uploaded reference photograph.
 
-Do not change the pet's breed characteristics, simplify identifying features, invent markings, or alter the natural proportions of the face.
+Faithfully preserve the pet’s:
+• facial proportions and head shape
+• muzzle shape and length
+• nose shape and color
+• eye shape, placement, direction, and natural color
+• ear shape, size, position, and distinguishing features
+• coat colors
+• unique markings and their exact placement
+• fur length and texture
+• whiskers
+• natural expression
+• breed characteristics
+• visible anatomy and proportions
 
-The costume and environment may be transformed, but the pet itself must remain clearly recognizable as the same individual animal.
+Do not genericize the pet into a typical example of its breed.
 
-The pet should look unmistakably like the animal in the uploaded photograph while the rendering itself clearly appears as traditional fine-art pastel artwork.
+Do not invent, remove, relocate, recolor, simplify, enlarge, or exaggerate identifying markings or physical features.
+
+The pet itself is the primary subject and must visually dominate the artwork.
+
+Halloween styling is secondary and must never compete with, distract from, cover, or visually overpower the pet.
+
+The costume, accessories, and decorative elements may be transformed, but the pet itself must remain unmistakably recognizable as the exact animal in the uploaded photograph.
 
 ART STYLE:
 
-Masterful hand-rendered soft pastel portrait inspired by grand 17th-century European aristocratic paintings.
+Create a charming hand-rendered soft pastel illustration designed specifically for premium apparel printing.
 
-Use rich velvety pastel pigment, visible chalky texture, delicately layered strokes, softly blended transitions, subtle fine-art paper grain, graceful painterly edges, and refined hand-drawn detailing.
+The artwork should have the warmth and tactile character of a traditional pastel drawing while also having the clean visual impact of a professionally designed T-shirt graphic.
 
-Interpret classical Renaissance portraiture through a luxurious traditional pastel medium rather than photorealistic oil painting.
+Use:
+• rich chalky pastel pigment
+• visible layered pastel strokes
+• softly feathered edges
+• subtle fine-art paper-like texture within the illustrated elements
+• gently blended areas of color
+• broken-color pastel marks
+• expressive hand-drawn detailing
+• simplified but dimensional shading
+• soft, slightly imperfect traditional-media edges
 
-Render the pet's fur using layered pastel strokes, softly feathered edges, broken-color texture, and carefully blended masses of color rather than photographic individual-hair detail.
+The pet itself must clearly appear illustrated in soft pastel rather than photographic.
 
-Maintain the pet's true coat colors and markings while allowing visible pastel texture to remain throughout the fur.
+Maintain enough detail to preserve the pet’s identity, especially in the face, eyes, muzzle, ears, coat pattern, and defining markings.
 
-The eyes and nose should retain beautiful dimensionality and expression while clearly appearing hand-rendered. Use soft luminous highlights rather than glossy photographic reflections.
-
-The finished artwork should immediately read as an expensive commissioned soft pastel portrait on textured artist paper, not a photograph, CGI render, or digitally airbrushed illustration.
+Avoid microscopic individual-hair rendering or photographic realism.
 
 REFERENCE FIDELITY MUST REMAIN HIGH, BUT PHOTOREALISM MUST REMAIN LOW.
 
-COLOR DIRECTION & VISUAL CONTRAST:
+PET-FIRST VISUAL HIERARCHY — CRITICAL:
 
-Create a sophisticated, intentionally varied Renaissance color palette with strong visual hierarchy.
+The pet must be the clear and immediate focal point of the entire graphic.
 
-Do not allow the pet, clothing, and background to become overly color-matched, monochromatic, or similar in value.
+The viewer should notice the pet first and the Halloween theme second.
 
-The pet's face must be the brightest and most visually compelling focal point.
+The pet should occupy approximately 70–85% of the visual composition.
 
-Choose noble clothing colors that create attractive separation from the pet's natural coat color rather than simply repeating it.
+Keep the pet large, centered, clearly defined, and visually dominant.
 
-Use rich aristocratic jewel tones such as deep sapphire blue, emerald green, garnet red, royal plum, midnight blue, or restrained burgundy where they create effective contrast with the pet.
+The face and eyes should receive the highest level of detail and visual emphasis.
 
-Use warm antique gold, muted brass, ivory, cream, or parchment-colored details as selective accents.
+Halloween accessories and decorations should occupy only a small supporting portion of the design.
 
-If the pet has warm brown, tan, cream, orange, or golden fur, favor cooler jewel-toned clothing such as sapphire, emerald, deep teal, or plum.
+Do not surround the pet with numerous decorative objects.
 
-If the pet has cool gray, blue-gray, black, or silver fur, introduce warmer noble colors such as garnet, burgundy, antique gold, deep oxblood, or warm ivory.
+Do not fill empty space simply to make the image feel more Halloween-themed.
 
-If the pet is predominantly white or very light colored, use deeper saturated clothing and a mid-to-dark background to clearly separate the silhouette.
+Do not create a busy collage of pumpkins, bats, ghosts, stars, candy, leaves, moons, spiderwebs, or other decorative items.
 
-If the pet is predominantly dark colored, use strategic lighter fabric details, luminous ruff tones, controlled highlights, and a background that preserves clear edge separation.
+The strength of the design should come primarily from the pet itself.
 
-Use complementary and near-complementary color relationships where appropriate so important elements visually pop without becoming garish.
+HALLOWEEN THEME:
 
-Avoid repeating the same dominant hue across the fur, clothing, background, flowers, and decorative accents.
+Create a subtle, cute, playful Halloween interpretation of the pet.
 
-Create contrast through hue, value, temperature, and saturation rather than relying only on brightness.
+Choose ONE primary Halloween concept.
 
-ROYAL ATTIRE:
+Possible primary concepts may include:
 
-Dress the pet naturally in exquisitely tailored 17th-century noble attire appropriate to its anatomy.
+• a cute ghost costume
+• a charming witch hat
+• a small vampire cape
+• a pumpkin costume
+• a simple skeleton-inspired costume
+• small bat wings
+• a Halloween bow tie or bandana
+• the pet sitting naturally beside a small pumpkin
+• the pet partially emerging from one pumpkin
 
-Include luxurious velvet, elegant brocade, intricate embroidery, tasteful antique-gold detailing, restrained metallic braid, graceful fabric folds, and an elegant lace or embroidered ruff framing the neck.
+Keep the Halloween concept simple and visually restrained.
 
-Select the principal garment color based on what creates the strongest tasteful contrast with the pet's coat rather than automatically matching the fur or background.
+Use no more than ONE main costume or Halloween concept.
 
-The royal clothing should feel visually distinct from both the pet and the environment.
+Optionally include 0–2 small supporting Halloween accents only if they improve the composition.
 
-Use one dominant noble garment color, one restrained secondary color, and selective metallic or ivory accents rather than making every element the same color family.
+Examples of subtle supporting accents may include:
+• one or two tiny bats
+• one small pumpkin
+• one miniature ghost
+• a few small candy pieces
+• a subtle crescent moon accent
+• a very small spiderweb detail
+• a few restrained autumn leaves
 
-Render fabrics through rich pastel layering, visible pigment, softly blended shadows, and controlled hand-drawn detail rather than photorealistic textile simulation.
+Supporting elements must remain significantly smaller and less detailed than the pet.
 
-Gold embroidery and metallic details should be suggested through warm ochre, antique gold, cream, and restrained luminous pastel highlights rather than sharp reflective CGI effects.
+Do not combine multiple major Halloween concepts in the same image.
 
-The clothing must integrate naturally around the shoulders and chest without creating a human body or altering the pet's anatomy.
+For example, do not combine a witch costume, pumpkins, ghosts, bats, candy, moon, stars, leaves, and spiderwebs into one composition.
 
-Keep the face, ears, muzzle, whiskers, and identifying markings completely unobstructed.
+Less is better.
 
-POSE & COMPOSITION:
+The Halloween theme should enhance the pet rather than become the subject of the artwork.
 
-Formal portrait. Centered head-and-chest composition with a poised, calm, dignified posture.
+Keep the overall feeling CUTE, FUN, CHARMING, and PREMIUM rather than busy, chaotic, scary, grotesque, dark, violent, or horror-focused.
 
-The pet looks toward the viewer with quiet confidence and regal presence.
+COSTUME:
 
-Use a sophisticated classical portrait crop with enough surrounding space to feel grand and balanced rather than tightly cropped.
+Any costume must fit naturally around the pet’s real anatomy.
 
-Create a clear visual hierarchy:
+Keep costumes visually simple.
 
-The face and eyes are the primary focal point.
+Avoid oversized, elaborate, highly detailed, or theatrical costumes that cover large portions of the pet.
 
-The royal clothing and ruff are the secondary focal point.
+The pet’s face, head shape, ears, coat, markings, and recognizable features should remain clearly visible.
 
-The background remains atmospheric and subordinate.
+Do not cover or significantly alter:
+• eyes
+• muzzle
+• nose
+• important facial markings
+• distinctive ears
+• defining coat patterns
 
-Do not allow decorative elements, costume details, or background colors to compete with the pet's face.
+A witch hat, cape, bandana, collar, ghost drape, wings, or similar costume should act only as a small visual enhancement.
 
-LIGHTING:
+Avoid making the pet look like it has a human body.
 
-Dramatic but flattering old-master lighting interpreted through a traditional soft pastel aesthetic.
+The costume should feel naturally adapted to the pet’s anatomy while retaining a whimsical illustrated quality.
 
-A soft directional key light should illuminate the face and eyes, creating a luminous focal area against deeper surrounding values.
+COMPOSITION — T-SHIRT DESIGN:
 
-Use subtle warm highlights across the face and selected fur edges, with gentle transitions into richer shadow.
+Create a centered, compact, visually balanced composition specifically designed to be printed on the front of a T-shirt.
 
-Allow portions of the costume and background to fall into deeper values so the pet's face appears naturally illuminated and visually prominent.
+The pet must dominate the graphic.
 
-Maintain clear detail in dark fur and clothing without flattening the image or making every area equally bright.
+Prefer a large head-and-upper-body, seated, or simple full-body composition depending on the reference photograph.
 
-Use layered pastel color, controlled value shifts, gentle blending, and visible hand-drawn strokes to create dimensional form rather than photorealistic lighting simulation.
+Keep the pet noticeably larger than every surrounding decorative element.
 
-BACKGROUND:
+Create a strong, recognizable silhouette that reads clearly from a distance.
 
-Create a deep, painterly, atmospheric Renaissance interior or abstract old-master backdrop rendered entirely in soft pastel.
+The pet should remain visually strong even if all Halloween decorations were removed.
 
-Use sophisticated muted colors such as deep charcoal, smoky umber, muted olive, desaturated blue-green, aged burgundy, warm stone, or shadowed brown.
+If decorative elements are included, place them close to the pet and use them sparingly.
 
-The background should complement the pet and royal attire without directly matching their dominant colors.
+Decorative elements should function as small accents rather than a surrounding frame.
 
-Use restrained color variation across the background rather than covering the entire scene in one uniform hue.
+Do not create a wreath, scene, border, collage, decorative halo, or dense cluster of Halloween imagery around the pet.
 
-Subtle passages of cooler and warmer color may be introduced to create richness and depth.
+Avoid excessively wide compositions.
 
-Keep background saturation lower than the primary garment and keep background contrast lower than the pet's face.
+Avoid scattered objects located far away from the pet.
 
-Use soft atmospheric pastel blending, visible pigment, delicate paper grain, softly suggested architectural forms, and graceful edge falloff.
+Avoid filling the entire print area with Halloween decorations.
 
-A subtle Renaissance column, curtain, stone wall, or shadowed interior detail may be suggested if it enriches the composition, but it should remain understated.
+Keep intentional open space around the outer silhouette of the design.
 
-The pet's silhouette, ears, and facial outline must remain clearly separated from the background.
+The final composition should feel like:
 
-Avoid placing dark fur directly against an equally dark background without a controlled rim light or value change.
+A BEAUTIFUL CUSTOM PET PORTRAIT WITH A HALLOWEEN TWIST
 
-Avoid placing light fur directly against an equally pale background.
+rather than:
+
+A HALLOWEEN SCENE THAT HAPPENS TO CONTAIN A PET.
+
+COLOR DIRECTION:
+
+Preserve the pet’s true coat colors and markings as the dominant natural color foundation of the image.
+
+Use Halloween colors only as selective accents.
+
+Possible accent colors include:
+• pumpkin orange
+• warm burnt orange
+• golden yellow
+• dusty lavender
+• muted violet
+• plum
+• soft black
+• charcoal
+• warm cream
+• ivory
+• sage green
+• muted teal
+
+Do not overwhelm the pet with large amounts of orange, purple, or black.
+
+Avoid turning the entire composition into a Halloween color palette.
+
+The pet’s natural coloration should remain visually prominent.
+
+Use contrast carefully so the costume or accessories complement the pet without drawing more attention than the pet’s face.
 
 PASTEL MEDIUM — VERY IMPORTANT:
 
-The traditional pastel medium must be unmistakable at first glance.
+The soft pastel medium must be unmistakable at first glance.
 
-Maintain visible fine-art paper texture throughout the image.
+Use visible chalky pigment, layered color, softly broken strokes, slightly textured edges, gentle blending, and subtle variations in pigment density.
 
-Use rich chalky pigment, layered strokes, softly feathered fur edges, broken-color passages, gently blended shadows, delicate hand-drawn details, and slight natural variations in pigment density.
+The pet should receive the highest level of pastel detail.
 
-Allow small areas of paper grain to remain visible through the pastel.
+Render the face, eyes, ears, muzzle, coat, and defining markings with refined hand-rendered pastel artistry.
 
-Avoid rendering every surface with identical smoothness.
+Costume and decorative elements should be slightly simpler, softer, and less detailed than the pet.
 
-The face may receive the most refined detail, while clothing and background areas should become progressively looser and more painterly.
+This difference in detail should naturally reinforce the pet as the focal point.
 
-Do not digitally polish away the pastel character.
+Avoid perfectly smooth digital gradients or polished vector-like surfaces.
 
-Avoid photographic sharpness, microscopic fur rendering, smooth CGI surfaces, perfectly simulated velvet, plastic-looking eyes, or airbrushed digital gradients.
+The final artwork should feel hand-created by a professional pastel illustrator rather than generated as a photograph, CGI render, vector clip art, or generic cartoon.
+
+BACKGROUND — CRITICAL:
+
+NO BACKGROUND.
+
+The finished graphic must contain ONLY the pet and the minimal intentional Halloween costume/accessories/decorative elements belonging to the design.
+
+Everything outside the illustrated graphic must be completely transparent.
+
+Do not create:
+• a colored background
+• white background
+• black background
+• rectangular background
+• circular background
+• badge
+• frame
+• border
+• scenery
+• room
+• landscape
+• floor
+• wall
+• sky
+• horizon
+• atmospheric backdrop
+• gradient
+• vignette
+• decorative halo
+• large glow
+• large shadow
+• background texture
+
+Do not place a colored shape behind the pet.
+
+Do not simulate transparency with white, gray, or checkerboard pixels.
+
+The artwork must be delivered as a clean isolated graphic suitable for placement directly onto a T-shirt.
+
+TEXT — CRITICAL:
+
+NO TEXT OF ANY KIND.
+
+Do not include:
+• words
+• pet names
+• Halloween phrases
+• letters
+• numbers
+• typography
+• banners
+• signs
+• labels
+• logos
+• signatures
+• watermarks
+
+PRINT QUALITY:
+
+Create the artwork at the highest possible visual quality and resolution.
+
+Use clean, well-defined outer edges suitable for apparel printing while preserving the natural texture of traditional soft pastel inside the illustration.
+
+Prioritize clarity and detail in the pet.
+
+Avoid extremely faint details that may disappear during garment printing.
+
+Avoid very thin isolated lines.
+
+Maintain strong visual readability, clean separation between major shapes, and a cohesive silhouette suitable for professional direct-to-garment or print-on-demand production.
 
 FINAL AESTHETIC:
 
-Majestic, sophisticated, timeless, dramatic, luxurious, richly artistic, emotionally compelling, gallery-worthy, and suitable for a premium framed fine-art print.
+Cute, charming, handcrafted, premium, festive, collectible, highly recognizable, and visually appealing.
 
-The finished artwork should combine faithful pet likeness, aristocratic Renaissance grandeur, sophisticated color contrast, and unmistakable hand-rendered soft pastel artistry.
+The finished illustration should feel like a premium custom pastel portrait of the customer's individual pet that has been given a subtle, playful Halloween twist.
 
-The portrait should have a strong visual focal point rather than appearing uniformly colored or overly coordinated.
+The pet must remain the unquestionable hero of the artwork.
 
-The pet's face should immediately command attention, supported by contrasting royal clothing, selective luminous accents, and a quieter atmospheric background.
+The finished design should combine:
 
-Color harmony should feel sophisticated but never excessively matched.
+FAITHFUL PET LIKENESS + BEAUTIFUL SOFT PASTEL ARTISTRY + SIMPLE HALLOWEEN STYLING + CLEAN T-SHIRT COMPOSITION.
 
-The overall image should feel richly curated, dimensional, and visually striking while retaining the elegance of a historic European portrait.
+When choosing between adding another Halloween detail and keeping the pet visually dominant, ALWAYS choose the pet.
 
 DO NOT INCLUDE:
 
+Busy Halloween compositions, excessive decorations, multiple major Halloween concepts, decorative wreaths, dense clusters of pumpkins, excessive bats, excessive ghosts, excessive candy, excessive stars, excessive leaves, large moons, elaborate scenery, backgrounds, rectangular artwork boundaries, colored backdrop shapes, text, words, names, letters, numbers, typography, logos, signatures, watermarks, photorealism, photographic rendering, hyper-realistic fur, CGI rendering, 3D rendering, vector clip-art appearance, generic cartoon styling, human bodies, human hands, human arms, extra limbs, distorted anatomy, altered identifying markings, oversized costumes, costumes that hide identifying features, frightening gore, blood, violence, disturbing horror imagery, excessively scary expressions, or Halloween elements that compete with or overpower the pet.`,
+
+
+
+"White Background":
+`Create a museum-quality soft pastel portrait of the exact pet shown in the uploaded reference image.
+REFERENCE FIDELITY — HIGHEST PRIORITY:
+The pet must be immediately recognizable as the same individual animal from the reference photo. Preserve the exact facial proportions, muzzle shape, nose shape and color, eye shape and color, ear shape and position, fur length and texture, coat colors, distinctive markings, whiskers, and natural expression. Do not beautify, simplify, exaggerate, or invent markings or physical features. Preserve the pet's breed characteristics and individual personality.
+ART STYLE:
+Realistic fine-art soft pastel illustration with sophisticated hand-rendered detail. Use rich chalky pigment, delicate layered pastel strokes, softly blended fur, individually suggested fine hairs around the face and ears, subtle tonal transitions, and beautifully rendered lifelike eyes with natural catchlights. The finished piece should feel like an expensive commissioned pet portrait created by a professional pastel artist, not a photograph and not a cartoon.
+POSE & COMPOSITION:
+Front-facing or naturally oriented toward the viewer based on the reference image. Create a centered head-and-upper-chest portrait with anatomically correct proportions.
+The pet should rise naturally from the bottom edge of the artwork and occupy approximately the lower two-thirds of the canvas, leaving generous clean white negative space above the head. Keep comfortable breathing room around both ears.
+BACKGROUND:
+Completely seamless, uniform pure white (#FFFFFF) extending edge-to-edge. No visible floor, horizon, gradient, vignette, texture, cast shadow, environmental shadow, scenery, or decorative elements.
+LIGHTING:
+Soft, flattering studio-style illumination with gentle dimensionality across the fur and face. Avoid harsh shadows or blown highlights.
+FINAL AESTHETIC:
+Elegant, timeless, warm, refined, emotionally expressive, premium wall-art quality, highly detailed and print-ready.
+DO NOT INCLUDE:
+No mats, signatures, logos, watermarks, props, furniture, scenery, extra animals, extra limbs, distorted anatomy, human features, costumes, collars that are not present in the reference, or invented markings.`,
+"Custom":
+`Create premium, print-ready artwork from the uploaded reference photograph using the customer's description below. Preserve the recognizable identity, proportions, and important details of the subjects unless the customer explicitly requests a change. Follow the requested artistic medium, background, composition, and lettering. If no description is supplied, create a refined hand-rendered soft pastel interpretation of the photograph. Do not include a mat, signature, or watermark. Do not add text unless requested.`,
+"Royal Renaissance":
+`Create a breathtaking museum-quality soft pastel Renaissance portrait of the exact pet shown in the uploaded reference image, reimagined as European nobility.
+REFERENCE FIDELITY — HIGHEST PRIORITY:
+The face and identity of the pet must remain unmistakably faithful to the reference photograph. Preserve the exact facial proportions, muzzle, nose, eye shape and color, ear shape and position, coat color, fur texture, distinctive markings, whiskers, and characteristic expression.
+Do not change the pet's breed characteristics, simplify identifying features, invent markings, or alter the natural proportions of the face.
+The costume and environment may be transformed, but the pet itself must remain clearly recognizable as the same individual animal.
+The pet should look unmistakably like the animal in the uploaded photograph while the rendering itself clearly appears as traditional fine-art pastel artwork.
+ART STYLE:
+Masterful hand-rendered soft pastel portrait inspired by grand 17th-century European aristocratic paintings.
+Use rich velvety pastel pigment, visible chalky texture, delicately layered strokes, softly blended transitions, subtle fine-art paper grain, graceful painterly edges, and refined hand-drawn detailing.
+Interpret classical Renaissance portraiture through a luxurious traditional pastel medium rather than photorealistic oil painting.
+Render the pet's fur using layered pastel strokes, softly feathered edges, broken-color texture, and carefully blended masses of color rather than photographic individual-hair detail.
+Maintain the pet's true coat colors and markings while allowing visible pastel texture to remain throughout the fur.
+The eyes and nose should retain beautiful dimensionality and expression while clearly appearing hand-rendered. Use soft luminous highlights rather than glossy photographic reflections.
+The finished artwork should immediately read as an expensive commissioned soft pastel portrait on textured artist paper, not a photograph, CGI render, or digitally airbrushed illustration.
+REFERENCE FIDELITY MUST REMAIN HIGH, BUT PHOTOREALISM MUST REMAIN LOW.
+COLOR DIRECTION & VISUAL CONTRAST:
+Create a sophisticated, intentionally varied Renaissance color palette with strong visual hierarchy.
+Do not allow the pet, clothing, and background to become overly color-matched, monochromatic, or similar in value.
+The pet's face must be the brightest and most visually compelling focal point.
+Choose noble clothing colors that create attractive separation from the pet's natural coat color rather than simply repeating it.
+Use rich aristocratic jewel tones such as deep sapphire blue, emerald green, garnet red, royal plum, midnight blue, or restrained burgundy where they create effective contrast with the pet.
+Use warm antique gold, muted brass, ivory, cream, or parchment-colored details as selective accents.
+If the pet has warm brown, tan, cream, orange, or golden fur, favor cooler jewel-toned clothing such as sapphire, emerald, deep teal, or plum.
+If the pet has cool gray, blue-gray, black, or silver fur, introduce warmer noble colors such as garnet, burgundy, antique gold, deep oxblood, or warm ivory.
+If the pet is predominantly white or very light colored, use deeper saturated clothing and a mid-to-dark background to clearly separate the silhouette.
+If the pet is predominantly dark colored, use strategic lighter fabric details, luminous ruff tones, controlled highlights, and a background that preserves clear edge separation.
+Use complementary and near-complementary color relationships where appropriate so important elements visually pop without becoming garish.
+Avoid repeating the same dominant hue across the fur, clothing, background, flowers, and decorative accents.
+Create contrast through hue, value, temperature, and saturation rather than relying only on brightness.
+ROYAL ATTIRE:
+Dress the pet naturally in exquisitely tailored 17th-century noble attire appropriate to its anatomy.
+Include luxurious velvet, elegant brocade, intricate embroidery, tasteful antique-gold detailing, restrained metallic braid, graceful fabric folds, and an elegant lace or embroidered ruff framing the neck.
+Select the principal garment color based on what creates the strongest tasteful contrast with the pet's coat rather than automatically matching the fur or background.
+The royal clothing should feel visually distinct from both the pet and the environment.
+Use one dominant noble garment color, one restrained secondary color, and selective metallic or ivory accents rather than making every element the same color family.
+Render fabrics through rich pastel layering, visible pigment, softly blended shadows, and controlled hand-drawn detail rather than photorealistic textile simulation.
+Gold embroidery and metallic details should be suggested through warm ochre, antique gold, cream, and restrained luminous pastel highlights rather than sharp reflective CGI effects.
+The clothing must integrate naturally around the shoulders and chest without creating a human body or altering the pet's anatomy.
+Keep the face, ears, muzzle, whiskers, and identifying markings completely unobstructed.
+POSE & COMPOSITION:
+Formal portrait. Centered head-and-chest composition with a poised, calm, dignified posture.
+The pet looks toward the viewer with quiet confidence and regal presence.
+Use a sophisticated classical portrait crop with enough surrounding space to feel grand and balanced rather than tightly cropped.
+Create a clear visual hierarchy:
+The face and eyes are the primary focal point.
+The royal clothing and ruff are the secondary focal point.
+The background remains atmospheric and subordinate.
+Do not allow decorative elements, costume details, or background colors to compete with the pet's face.
+LIGHTING:
+Dramatic but flattering old-master lighting interpreted through a traditional soft pastel aesthetic.
+A soft directional key light should illuminate the face and eyes, creating a luminous focal area against deeper surrounding values.
+Use subtle warm highlights across the face and selected fur edges, with gentle transitions into richer shadow.
+Allow portions of the costume and background to fall into deeper values so the pet's face appears naturally illuminated and visually prominent.
+Maintain clear detail in dark fur and clothing without flattening the image or making every area equally bright.
+Use layered pastel color, controlled value shifts, gentle blending, and visible hand-drawn strokes to create dimensional form rather than photorealistic lighting simulation.
+BACKGROUND:
+Create a deep, painterly, atmospheric Renaissance interior or abstract old-master backdrop rendered entirely in soft pastel.
+Use sophisticated muted colors such as deep charcoal, smoky umber, muted olive, desaturated blue-green, aged burgundy, warm stone, or shadowed brown.
+The background should complement the pet and royal attire without directly matching their dominant colors.
+Use restrained color variation across the background rather than covering the entire scene in one uniform hue.
+Subtle passages of cooler and warmer color may be introduced to create richness and depth.
+Keep background saturation lower than the primary garment and keep background contrast lower than the pet's face.
+Use soft atmospheric pastel blending, visible pigment, delicate paper grain, softly suggested architectural forms, and graceful edge falloff.
+A subtle Renaissance column, curtain, stone wall, or shadowed interior detail may be suggested if it enriches the composition, but it should remain understated.
+The pet's silhouette, ears, and facial outline must remain clearly separated from the background.
+Avoid placing dark fur directly against an equally dark background without a controlled rim light or value change.
+Avoid placing light fur directly against an equally pale background.
+PASTEL MEDIUM — VERY IMPORTANT:
+The traditional pastel medium must be unmistakable at first glance.
+Maintain visible fine-art paper texture throughout the image.
+Use rich chalky pigment, layered strokes, softly feathered fur edges, broken-color passages, gently blended shadows, delicate hand-drawn details, and slight natural variations in pigment density.
+Allow small areas of paper grain to remain visible through the pastel.
+Avoid rendering every surface with identical smoothness.
+The face may receive the most refined detail, while clothing and background areas should become progressively looser and more painterly.
+Do not digitally polish away the pastel character.
+Avoid photographic sharpness, microscopic fur rendering, smooth CGI surfaces, perfectly simulated velvet, plastic-looking eyes, or airbrushed digital gradients.
+FINAL AESTHETIC:
+Majestic, sophisticated, timeless, dramatic, luxurious, richly artistic, emotionally compelling, gallery-worthy, and suitable for a premium framed fine-art print.
+The finished artwork should combine faithful pet likeness, aristocratic Renaissance grandeur, sophisticated color contrast, and unmistakable hand-rendered soft pastel artistry.
+The portrait should have a strong visual focal point rather than appearing uniformly colored or overly coordinated.
+The pet's face should immediately command attention, supported by contrasting royal clothing, selective luminous accents, and a quieter atmospheric background.
+Color harmony should feel sophisticated but never excessively matched.
+The overall image should feel richly curated, dimensional, and visually striking while retaining the elegance of a historic European portrait.
+DO NOT INCLUDE:
 Photorealism, photographic rendering, hyper-realistic fur, CGI rendering, 3D animation rendering, plastic surfaces, perfectly smooth digital shading, airbrushed digital surfaces, overly glossy eyes, monochromatic color schemes, excessive color matching, identical dominant colors across the pet clothing and background, muddy low-contrast palettes, flat lighting, human facial features, human hands, human arms, human body proportions, extra limbs, distorted anatomy, exaggerated facial features, crowns that cover the ears, modern clothing, comedy elements, excessive glitter, text, names, letters, typography, signatures, logos, or watermarks.`,
 
 

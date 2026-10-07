@@ -1,6 +1,7 @@
 // Server-only payment finalization. Gateway Verify JWT OFF; the exact service
 // credential is checked below. Never call this endpoint from the browser.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { fulfillOrder } from "./fulfillment.ts";
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), {
   status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -89,7 +90,8 @@ export async function handler(req: Request) {
       p_ship_name: shipping.name, p_ship_address: address,
     });
     if (result.error || !result.data) throw new Error("order_commit_failed");
-    return json(200, result.data);
+    const printifyOrderId = await fulfillOrder(admin, result.data.orderId);
+    return json(200, { ...result.data, status: "submitted", printifyOrderId });
   } catch (error) {
     console.error("Order finalization needs retry", sessionId,
       error instanceof Error ? error.message : "unexpected_error");

@@ -20,7 +20,7 @@ function assert(value: unknown, message: string): asserts value {
 Deno.test("finalization verifies payments before writing and preserves replay results", async () => {
   const savedFetch = globalThis.fetch;
   const env = { SUPABASE_URL: "https://project.example.test", SUPABASE_SERVICE_ROLE_KEY: "server-secret",
-    STRIPE_SECRET_KEY: "sk_live_fixture" };
+    STRIPE_SECRET_KEY: "sk_live_fixture", PRINTIFY_API_KEY: "printify-fixture" };
   const old = Object.fromEntries(Object.keys(env).map(k => [k, Deno.env.get(k)]));
   for (const [key, value] of Object.entries(env)) Deno.env.set(key, value);
   let session = structuredClone(paid);
@@ -44,6 +44,8 @@ Deno.test("finalization verifies payments before writing and preserves replay re
       assert(args.p_total === 5600 && args.p_draft_id === draftId, "Must use verified payment and draft");
       if (rpcFails) return new Response(JSON.stringify({ message: "database unavailable" }), { status: 500 });
       body = { orderId: "order-fixture", status: "paid", replayed: writes > 1 };
+    } else if (url.endsWith("/rpc/claim_order_fulfillment")) {
+      body = { action: "submitted", printify_order_id: "printify-fixture" };
     } else throw new Error("Unexpected request: " + url);
     return new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json" } });
   }) as typeof fetch;
