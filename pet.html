@@ -140,6 +140,7 @@
     import { GENERATION_COST, canAffordGeneration, creditBalanceText, dailyCreditAllowance, getDailyCredits, initializeCreditProfile, creditStatusText } from "./credits.js";
 
     import { generatePreview } from "./preview-request.js";
+    import { isTshirt } from "./tshirt.js";
 
     await initializeCreditProfile();
 
@@ -149,6 +150,7 @@
     // Curated example imagery for the product gallery. Product availability and
     // variants still come live from Supabase when a tile is selected.
     const ROWS = [
+      { type: "t-shirt", label: "T-Shirts", images: [1,2,3,4,5].map(n => `assets/pshirt${n}.png`) },
       { type: "framed-poster", label: "Framed Art",    images: [1,2,3,4,5].map(n => `assets/dogframe${n}.png`) },
       { type: "greeting-card", label: "Greeting Card", images: [1,2,3,4,5].map(n => `assets/card${n}.png`) },
       { type: "poster",        label: "Rolled Poster", images: [1,2,3,4,5].map(n => `assets/ppet${n}.png`) },
@@ -159,7 +161,7 @@
     // ---- load catalog + render rows ----
     async function init() {
       const { data } = await supabase.from("products").select("*").eq("category", CATEGORY);
-      (data || []).forEach(p => { productsByType[p.product_type] = p; });
+      (data || []).forEach(p => { productsByType[isTshirt(p) ? "t-shirt" : p.product_type] = p; });
 
       document.getElementById("rows").innerHTML = ROWS.map(row => `
         <section class="product-row" id="product-${row.type}">
@@ -215,6 +217,9 @@
     function openModal(product, img) {
       selectedProduct = product;
       selectedImg = img;
+      const styles = isTshirt(product) ? ["Halloween T-Shirt"] : STYLE_OPTIONS;
+      styleSelect.replaceChildren(...styles.map(style => new Option(style, style)));
+      selectedStyle = styles[0];
       resetModal();
       mTitle.textContent = product.title || "Custom Pet Portrait";
       mSub.textContent = "Printed & shipped";
@@ -294,8 +299,9 @@
         const fd = new FormData();
         fd.append("image", blob, "photo.jpg");
         fd.append("productType", CATEGORY);
+        if (isTshirt(selectedProduct)) fd.append("artworkProduct", "t-shirt");
         fd.append("style", selectedStyle);
-        fd.append("note", "");
+        fd.append("note", isTshirt(selectedProduct) ? "Create a pet-first Halloween soft pastel T-shirt illustration. Preserve the exact pet's face, coat colors and markings. Add one simple cute Halloween costume and at most two small supporting accents. Keep the pet dominant, the background transparent, and include no text." : "");
         fd.append("petName", selectedStyle === "White Background" ? petName.value.trim() : "");
 
         const data = await generatePreview(fd);
@@ -331,7 +337,7 @@
         category: CATEGORY,
         style: selectedStyle,
         petName: selectedStyle === "White Background" ? petName.value.trim() || null : null,
-        product_type: selectedProduct.product_type,
+        product_type: isTshirt(selectedProduct) ? "t-shirt" : selectedProduct.product_type,
         printify_product_id: selectedProduct.printify_product_id,
         blueprint_id: selectedProduct.blueprint_id,
         print_provider_id: selectedProduct.print_provider_id,
